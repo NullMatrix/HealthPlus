@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Main Page Proto</title>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+<style type="text/css">
+    body{
+    	padding-top: 70px;
+    }
+</style>
+</head>
+<body>
+
+	<script>
+
+
+		/************************
+		*	      Global        *
+		*************************/
+
+		//logged in user profile
+		var userProfile
+
+		//logged in user's data and metadata
+		var userContent
+		var contentMetadata
+
+		//The content to be displayed on current page
+		//root of the full content tree
+		var contentRoot 
+		//copy of the content tree trimmed by view permissions
+		var contentView
+		//reference to location in contentView for display
+		var contentNav
+
+		/************************
+		*	     On Load        *
+		*************************/
+
+		//loads console for logging
+		try {
+	    	console.log
+		} catch(e) {
+	    	if (e) {
+	        	console.log = function() {}
+	    	}
+		};
+		
+		//fetch profile and user data
+		userProfile = getUser(0);
+		userContent = getContent(0);
+		contentMetadata = getContentMeta();
+
+		//generate content tree
+
+		//copy root node from metadata
+		contentRoot = jQuery.extend(true, {}, contentMetadata.root_struct);
+
+		//Generate node for every known category
+		var catNodes = {};
+
+		$.each(contentMetadata.categories,function(i,val){
+			catNodes[val] = jQuery.extend(true, {}, contentMetadata.root_struct);
+			catNodes[val].type = "category";
+			catNodes[val].category = val;
+		});
+
+		//Sort user content into default categories
+		for(i=0;i<userContent.length;i++)
+		{
+			//record id for edit/delete 
+			var tmpContent =jQuery.extend(true,{}, userContent[i]);
+			tmpContent["id"] = i;
+
+			catNodes[userContent[i].category]["content"].push(tmpContent);
+			
+		}
+
+		//add category nodes to root
+		$.each(catNodes, function(i,val){contentRoot["content"].push(val);});
+
+		//content view is the tree pruned with permissions 
+		contentView = jQuery.extend(true,{}, contentRoot);
+		//set nav to root of current view
+		contentNav =  contentView;
+		
+
+		$( window ).load(function() {
+			//@TODO add root sidebar function as well
+
+			//set dataview to homepage
+  			document.getElementById("dataview").innerHTML = buildDataHomepage(contentNav);
+		});
+		
+
+
+		/************************
+		*	 Helper Functions   *
+		*************************/
+
+		function isLeafNode(cur)
+		{
+			if(cur.type === "text" || cur.type === "image" || cur.type === "map")
+				{return true;}
+			return false;
+
+		}
+
+		//takes the current content pointer and returns a 6 element array which maps
+		//content between content tree and content view.
+		function buildContentView(cur)
+		{
+			
+			//elements to be displayed (including controls)
+			var viewableElements = [];
+			viewableElements.length = 6;
+			//track how many elements we have added to view so far
+			var viewCount = 0;
+
+			//add control panel
+			viewableElements[viewCount] = {"type":"control"};
+			viewCount++;
+
+			//index of the next content element
+			var nextElem		
+			nextElem= (cur.page-1)*5;
+			
+			
+			//fill view array
+			while(viewCount < 6)
+			{
+				
+				//check if more data exists
+				if(typeof cur.content[nextElem] === 'undefined') {
+    				//if content does not exist add place holders
+    				viewableElements[viewCount] = {"type":"blank"};
+					viewCount++;
+				}
+				else {
+					//if content does exist add to view
+					viewableElements[viewCount] = cur.content[nextElem];
+					nextElem++;
+					viewCount++;
+    				
+				}
+
+			}//end while
+
+			return viewableElements
+		}
+
+		//return a copy of the content object which is the parent to the child param
+		function contentFindParent(child)
+		{
+			//return nothing if child is root
+			if(child.type === "root"){return;}
+
+			//set search to root of view tree
+			var catNode = contentView;
+
+			//return root as parent for categories 
+			if(child.type === "category"){return catNode;}
+
+			//select the correct category to search
+			for (var i = catNode.content.length - 1; i >= 0; i--) {
+				if(catNode.content[i].category === child.category)
+				{
+					catNode = catNode.content[i];
+					break;
+				}
+			}
+
+			//now that the correct category node is selected DFS through it ignoring leaf nodes
+			var searchFunc = function(root,targetID){
+				//If target found return itself
+				if(root.id === targetID){return root;}
+
+				//if not target and leaf type return negative match 
+				if(isLeafNode(root)){return {"id":-1};}
+
+				//recur for each child node
+				for(i=0;i<root.content.length;i++)
+				{
+
+					var x = searchFunc(root.content[i],targetID);
+
+					if(x.id === -1){continue;}//result indicates match not found
+					else if(x.id === targetID){return root;}//match found return parent
+					else{return x;}//parent found and returned
+
+				};
+
+				return {"id":-1};
+			}//end searchFunc
+
+			var parent = searchFunc(catNode,child.id);
+
+			if(parent.id === 'undefined'){return catNode;}//categories have no id
+			else if(parent.id === -1){return {"type":"blank"};} //id of -1 indicates no match found for child
+			//otherwise parent found
+			console.log(parent);
+			return parent;
+		}
+
+
+		/************************
+		*	   Event Handlers   *
+		*************************/
+
+		//button handler for nav bar buttons
+
+		function sideBarChange(buttonElement){
+			//alert(buttonElement.id);
+			var buttonClickedId = buttonElement.id;
+			  
+			//set active button
+			var x = document.getElementsByClassName("active");
+			var i;
+				for (i = 0; i < x.length; i++) {
+					x[i].setAttribute("class","inactive");
+				}
+			document.getElementById(buttonClickedId).setAttribute("class","active");
+
+			//button handlers
+			if( buttonClickedId === 'btnCircles' ){
+				document.getElementById("sidebar").innerHTML= "";
+				//console.log(getContentMeta());
+				
+			}
+			else if( buttonClickedId === 'btnPeople' ){
+				
+				document.getElementById("sidebar").innerHTML= buildSidebarPeople();
+			}
+			else if( buttonClickedId === 'btnData' ){
+
+				document.getElementById("dataview").innerHTML= buildMainDataview(contentNav);
+			}
+			else{
+				document.getElementById("sidebar").innerHTML=
+				"<p>"+buttonClickedId+"</p>";
+			}
+
+		}
+
+		//this function handles buttons in the data view
+		//moves the data nav ptr and rebuilds data view html
+		function dataNavChange(buttonElement)
+		{
+
+			
+			//handle control buttons first
+			if(buttonElement.value === "home")
+			{
+				//delete page element could be removed to "remember" where the user was in a collection
+				delete contentNav.page;
+
+				//reset the nav and reload dataview
+				contentNav = contentView;
+				document.getElementById("dataview").innerHTML = buildMainDataview(contentNav);
+				return;
+			}else if (buttonElement.value === "up")
+			{
+				delete contentNav.page;
+
+				contentNav = contentFindParent(contentNav);
+				contentNav["page"] = 1;
+
+				document.getElementById("dataview").innerHTML = buildMainDataview(contentNav);
+				return;
+
+				
+			}else if(buttonElement.value === "back")
+			{
+				//reduce page value and reload 
+				contentNav.page--;
+				document.getElementById("dataview").innerHTML = buildMainDataview(contentNav);
+				return;
+			}else if(buttonElement.value === "forward")
+			{
+				//increase page value and reload
+				contentNav.page++;
+				document.getElementById("dataview").innerHTML = buildMainDataview(contentNav);
+				return;
+			}
+
+
+
+						
+			//if contentNav type is root handle category selection
+			if(contentNav.type === "root")
+			{
+
+				for (var i = contentNav.content.length - 1; i >= 0; i--) {
+					if(contentNav.content[i].category === buttonElement.value)
+					{
+						contentNav = contentNav.content[i];
+						contentNav["page"] = 1;
+						break;
+					}
+				}
+				document.getElementById("dataview").innerHTML = buildMainDataview(contentNav);
+				return;
+			}
+			
+			//not root node so generate current data view
+			var view = buildContentView(contentNav);
+			//get user's selected element
+			var select = parseInt(buttonElement.value);
+			
+			//delete the page attribute from current node
+			delete contentNav.page;
+
+			//find the selected node and move the nav
+			for(i=0;i<contentNav.content.length;i++)
+			{
+				if(view[select].id == contentNav.content[i].id)
+				{
+					contentNav = contentNav.content[i];
+					contentNav["page"] = 1;
+					break;
+				}
+
+			}
+
+			//reload dataview (add overlay for leaf)
+			if(isLeafNode(contentNav))
+			{
+				document.getElementById("dataview").innerHTML += buildMainDataview(contentNav);
+				return;
+
+			}
+			document.getElementById("dataview").innerHTML = buildMainDataview(contentNav);
+		}
+
+
+		/************************
+		*	Query Functions   *
+		*************************/
+		function getAsset(name,last) {
+			//async query the server for an image asset and return PNG
+
+		    return $.ajax({
+		        type: "GET",
+		        url: "/data/asset/"+name,
+		        async: false
+
+		    }).responseJSON;
+		}
+
+		function getUser(id,last) {
+			//async query the server for a profile and return JSON obj
+
+		    return $.ajax({
+		        type: "GET",
+		        url: "/data/user/"+id,
+		        async: false
+
+		    }).responseJSON;
+		}
+
+		function getContent(id,last) {
+			//async query the server for a user's content and return JSON obj
+
+		    return $.ajax({
+		        type: "GET",
+		        url: "/data/content/"+id,
+		        async: false
+
+		    }).responseJSON;
+		}
+
+		function getContentMeta(last) {
+			//async query the server for content metadata and return JSON obj
+
+		    return $.ajax({
+		        type: "GET",
+		        url: "/data/content/meta",
+		        async: false
+
+		    }).responseJSON;
+		}
+
+		/************************
+		*	Builder Functions   *
+		*************************/
+
+		//return html for side bar view of friends
+		function buildSidebarPeople()
+		{
+
+				var side = ""
+
+				side += "<ul class='list-group' style='width:350px;'>"
+
+				var friend = {}
+				for(var i=0; i<userProfile.friends.length;i++)
+				{
+
+					//console.log("Running "+userProfile.friends[i])
+					friend = getUser(userProfile.friends[i]);
+
+					//console.log(friend)
+					side += "<li href='#' class='list-group-item' style='height:75px'>"
+					side += "<img src='/asset/"+friend.id+"' height=20 width=20></img>"
+					side += friend.fName +" "+friend.lName
+					side += "</li>"
+				}
+				side += "</ul>"
+				
+
+				return side
+		}
+
+		//Attributes
+		//cur - json - current content being displayed, if null return home category view
+		
+		//one of three functions for managing the data view
+		//1 - event handlers on data view numbered buttons
+		//2 - func to move the nav ptr and update nodes
+		//3 - func to build 
+		function buildMainDataview(cur)
+		{
+			/*
+
+			
+			//the func that moves the data adds and maintains a page attribiute in the curr obj
+			//amount of data displayed 2 rows of 3 options each included nav btns
+			
+			//select current data and build diaplay array such that arr index maps to screen 
+			
+				_____________
+				| 1   2   3 |
+				| 4   5   6 |
+				-------------
+			*/ 
+
+			//These two things should be checked in btn handler and be called in seperate functions
+			//If cur ptr has type root
+				//build and return special root page
+			if(cur.type === "root")
+				{return buildDataHomepage(cur);}
+			//if cur ptr is a leaf (not category, journal, or collection)
+			if(isLeafNode(cur))
+				{return buildDataLeaf(cur);}//@TODO: build a data editor
+
+
+			return buildDataCollection(cur);
+			
+
+
+		}//end func
+
+		function buildDataHomepage(root)
+		{
+			var btnCount=0;
+
+			var homepage = "";
+
+			homepage += "<div class='container' style='height:inherit;width:inherit;'>"
+
+			for(i=0;i<2;i++)
+			{
+				homepage += "<div class='row' style='height:50%;width:inherit;'>"
+				for(j=0;j<2;j++)
+				{
+					homepage += "<div class='col-md-6' style='height:100%; width:50%'>"
+			
+					homepage +="<button type='button' onclick='dataNavChange(this)' value='"+root.content[btnCount].category+"' style='height:95%;width:100%'>"+root.content[btnCount].category+"</button>";
+					btnCount++;
+
+					homepage += "</div>"
+				}			
+				homepage += "</div>"
+			}
+			homepage += "</div>"
+
+			return homepage
+		}
+
+		function buildDataCollection(cur){
+
+			var contentMap = buildContentView(cur)
+			var contentCount = 0;
+
+			var page = "";
+
+			page += "<div class='container' style='height:inherit;width:inherit;'>"
+
+			for(i=0;i<2;i++)
+			{
+				page += "<div class='row' style='height:50%;width:inherit;'>"
+				for(j=0;j<3;j++)
+				{
+					page += "<div class='col-md-4' style='height:97%; width:32%'>"
+					
+
+					//get the data type and create preview
+					if(contentMap[contentCount].type === "control")
+					{
+						//function builds control buttons html
+						page +=  buildDataControlPanel(cur);
+
+						contentCount++;
+					}
+					else if(contentMap[contentCount].type === "collection")
+					{
+						//@TODO: Needs count of elements in collection (preview?)
+						page +=  "<button type='button' onclick='dataNavChange(this)' value="+contentCount+" style='height:95%; width:100%;'>";
+						page += "<img src='/asset/icon_collect' height='50' width='50'></img>";
+						page += "<p>"+contentMap[contentCount].type+"<br>"+contentMap[contentCount].title+"</p>";
+						page += "</button>"; 
+						contentCount++;
+					}
+					else if(contentMap[contentCount].type === "text")
+					{
+						//@TODO: better title formating 
+						
+						page +=  "<button type='button' onclick='dataNavChange(this)' value="+contentCount+" style='height:95%; width:100%;'>";
+						page += "<img src='/asset/icon_text' height='50' width='50'></img>";
+						page += "<p>"+contentMap[contentCount].type +"<br>"+contentMap[contentCount].title+"</p>";
+						page += "</button>"; 
+						contentCount++;
+					}
+					else if(contentMap[contentCount].type === "image")
+					{
+						//@TODO: show preview or picture icon
+						page +=  "<button type='button' onclick='dataNavChange(this)' value="+contentCount+" style='height:95%; width:100%;'>";
+						page += "<img src='/asset/icon_img' height='50' width='50'></img>";
+						page += "<p>"+contentMap[contentCount].type+"</p>";
+						page += "</button>"; 
+						contentCount++;
+					}
+					else if(contentMap[contentCount].type === "map")
+					{
+						//@TODO: show map icon
+						page +=  "<button type='button' onclick='dataNavChange(this)' value="+contentCount+" style='height:95%; width:100%;'>";
+						page += "<img src='/asset/icon_map' height='50' width='50'></img>";
+						page += "<p>"+contentMap[contentCount].type+"</p>";
+						page += "</button>"; 
+						contentCount++;
+					}
+					else if(contentMap[contentCount].type === "Journal")
+					{
+						//@TODO: journal icon and count
+						page +=  "<button type='button' onclick='dataNavChange(this)' value="+contentCount+" style='height:95%; width:100%;'>";
+						page += "<img src='/asset/icon_journal' height='50' width='50'></img>";
+						page += "<p>"+contentMap[contentCount].type+"</p>";
+						page += "</button>"; 
+						contentCount++;
+					}
+					else{
+						//ignore blanks but ensure the spacing 
+						contentCount++;
+					}
+
+					
+					
+					page += "</div>"
+				}			
+				page += "</div>"
+			}
+			page += "</div>"
+			return page
+		}
+
+		//return html string for control buttons
+		function buildDataControlPanel(cur)
+		{
+
+			//@TODO: Button icons, styling, spacing, positioning 
+
+			var page = "";
+
+			//home button
+			page +=  "<button type='button' onclick='dataNavChange(this)' value='home' style='height:15%; width:100%;'>";
+			//page += "Home";
+			page += "<img src='/asset/home' height='30' width='30'></img>";
+			page += "</button>"; 
+
+			//up button
+			page +=  "<button type='button' onclick='dataNavChange(this)' value='up' style='height:25%; width:100%;'>";
+			//page += "Nav Up";
+			page += "<img src='/asset/arrow_up' height='50' width='50'></img>"; 
+			page += "</button>"; 
+
+			//back button
+			page +=  "<button type='button' onclick='dataNavChange(this)' value='back' style='height:50%; width:50%;' ";
+			if(cur.page == 1){ page+="disabled"} //disable if page 1
+			page +=">"
+			page += "<img src='/asset/arrow_left' height='50' width='50'";
+			if(cur.page == 1){ page+="style='opacity:0.3;'";}//grey icon if disabled 
+			page += "></img>"; 
+			//page +="<br>Back";
+			page += "</button>"; 
+
+			//forward button
+			page +=  "<button type='button' onclick='dataNavChange(this)' value='forward' style='height:50%; width:50%; display:inline;' ";
+			if(cur.page >= (cur.content.length/5)){ page+="disabled"}//disable if no more data
+			page += ">"; 
+			page += "<img src='/asset/arrow_right' height='50' width='50'";
+			if(cur.page >= (cur.content.length/5)){ page+="style='opacity:0.3;'";}//grey icon if disabled 
+			page += "></img>"; 
+			//page+="Forward";
+			page+="</button>";
+
+			return page;
+
+		}
+
+		function buildDataLeaf(cur){
+
+			var page = "";
+
+			page += "<span style='height:100%; width:100%; top:0; left:0; position:absolute; z-index:10; background:red; border-radius:25px;'>";
+			page += "<p>Title: "+cur.title+"</p>";
+			
+			if(cur.type == "text")
+			{
+				page += "<p><br>Content: "+cur.content+"</p>";
+			}
+			else if(cur.type == "image")
+			{
+				page+= "<img src='/asset/"+cur.content+"' height='200' width='200'></img>"
+			}
+			else if(cur.type == "map")
+			{
+				page += "<p>MAP!</p>";
+			}
+
+			page += "</span>"; 
+
+			return page;
+		}
+
+
+	</script>
+
+	<div class="container">
+		
+		<nav id="myNavbar" class="navbar navbar-default navbar-inverse navbar-fixed-top" role="navigation">
+				<div class="container">
+					<div class="navbar-header">
+						<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbarCollapse">
+							<span class="sr-only">Toggle navigation</span>
+							<span class="icon-bar"></span>
+							<span class="icon-bar"></span>
+							<span class="icon-bar"></span>
+						</button>
+				<a class="navbar-brand" href="#">Health+</a>
+				</div>
+				<div class="collapse navbar-collapse" id="navbarCollapse">
+				<ul class="nav navbar-nav">
+					<li id="btnCircles" onclick="sideBarChange(this)">
+						<a target="_blank">
+							<span class="glyphicon glyphicon-plus-sign"></span>
+							Your Circles
+						</a>
+					</li>
+					<li id="btnPeople" onclick="sideBarChange(this)"><a target="_blank">
+							<span class="glyphicon glyphicon-user"></span>
+							Your People 
+							<span class="badge">25</span>
+						</a>
+					</li>
+					<li id="btnData" onclick="sideBarChange(this)"><a target="_blank">
+						<span class="glyphicon glyphicon-folder-close"></span>
+						Your Data
+						</a>
+					</li>
+					<li id="btnAccount" onclick="sideBarChange(this)"><a target="_blank"><span class="glyphicon glyphicon-list"></span>Your Account</a></li>
+							</ul>
+						</div>
+					</div>
+				</nav>
+
+
+		<div class="row">
+			<div id="sidebar" class="col-lg-4">
+				Nothing here
+			</div>
+			<div class="col-lg-8">
+				<div id="dataview" class="jumbotron"style="height:610px;width:700;padding:5px;">
+				</div>
+			</div>
+		
+		</div>
+		<hr>
+		<div class="row">
+			<div class="col-xs-12">
+				<footer>
+					<p>&copy; Noun Project Contributers: Brian Oppenlander, Edward Boatman, Mister Pixel, icon 54, Martha Ormiston, useiconc.com, Creative Stall</p>
+				</footer>
+			</div>
+		</div>
+	</div>
+
+</body>
+</html>       

@@ -1,0 +1,99 @@
+{
+	"meta": {
+        "count": 0,
+        "categories":["Home","Work","Rec","Health"],
+        "datatypes":["collection","text","image","map","journal"],
+        "root_struct":{"type":"root","tags":[],"category":"","title":"","content":[]}
+    },
+    "data":{
+		"0":[{
+			"type":"text",
+			"tags":["home","bio"],
+			"category":"Home",
+			"title":"home1",
+			"content":"I live in a home"
+		},
+		{
+			"type":"text",
+			"tags":["work","bio"],
+			"category":"Work",
+			"title":"job1",
+			"content":"I have a job"
+		},
+		{
+			"type":"map",
+			"tags":["work","bio"],
+			"category":"Work",
+			"title":"jobmap",
+			"content":"this is a map"
+		},
+		{
+			"type":"image",
+			"tags":["work","bio"],
+			"category":"Work",
+			"title":"jobpic",
+			"content":"bone"
+		},
+		{
+			"type":"text",
+			"tags":["rec","bio"],
+			"category":"Rec",
+			"title":"rec1",
+			"content":"I have passtimes"
+		},
+		{
+			"type":"text",
+			"tags":["health","bio"],
+			"category":"Health",
+			"title":"hp1",
+			"content":"I have a body"
+		},
+		{
+			"type":"text",
+			"tags":["health","bio"],
+			"category":"Health",
+			"title":"hp2",
+			"content":"I have a body"
+		},
+		{
+			"type":"text",
+			"tags":["health","bio"],
+			"category":"Health",
+			"title":"hp3",
+			"content":"I have a body"
+		},
+		{
+			"type":"text",
+			"tags":["health","bio"],
+			"category":"Health",
+			"title":"hp4",
+			"content":"I have a body"
+		},
+		{
+			"type":"collection",
+			"tags":["health","bio"],
+			"category":"Health",
+			"title":"hpCollect",
+			"content":[{
+				"type":"text",
+				"tags":["health","bio"],
+				"category":"Health",
+				"title":"inCollect1",
+				"content":"I have a body"
+			},{
+				"type":"text",
+				"tags":["health","bio"],
+				"category":"Health",
+				"title":"inCollect2",
+				"content":"I have a body"
+			}]
+		},
+		{
+			"type":"text",
+			"tags":["health","bio"],
+			"category":"Health",
+			"title":"hp6",
+			"content":"I have a sore body"
+		}]
+	}
+}
