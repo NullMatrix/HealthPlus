@@ -3,10 +3,12 @@
         "count": 0,
         "categories":["Home","Work","Rec","Health"],
         "datatypes":["collection","text","image","map","journal"],
-        "root_struct":{"type":"root","tags":[],"category":"","title":"","content":[]}
+        "root_struct":{"created":"","last_edit":"","type":"root","tags":[],"category":"","title":"","content":[]}
     },
     "data":{
 		"0":[{
+			"created":"2016-01-01",
+			"last_edit":"2016-01-01",
 			"type":"text",
 			"tags":["home","bio"],
 			"category":"Home",
@@ -14,6 +16,8 @@
 			"content":"I live in a home"
 		},
 		{
+			"created":"2016-01-01",
+			"last_edit":"2016-01-01",
 			"type":"text",
 			"tags":["work","bio"],
 			"category":"Work",
@@ -21,6 +25,8 @@
 			"content":"I have a job"
 		},
 		{
+			"created":"2016-01-01",
+			"last_edit":"2016-01-01",
 			"type":"map",
 			"tags":["work","bio"],
 			"category":"Work",
@@ -28,6 +34,8 @@
 			"content":"this is a map"
 		},
 		{
+			"created":"2016-01-01",
+			"last_edit":"2016-01-01",
 			"type":"image",
 			"tags":["work","bio"],
 			"category":"Work",
@@ -35,6 +43,8 @@
 			"content":"bone"
 		},
 		{
+			"created":"2016-01-01",
+			"last_edit":"2016-01-01",
 			"type":"text",
 			"tags":["rec","bio"],
 			"category":"Rec",
@@ -42,6 +52,8 @@
 			"content":"I have passtimes"
 		},
 		{
+			"created":"2016-01-01",
+			"last_edit":"2016-01-01",
 			"type":"text",
 			"tags":["health","bio"],
 			"category":"Health",
@@ -49,6 +61,8 @@
 			"content":"I have a body"
 		},
 		{
+			"created":"2016-01-01",
+			"last_edit":"2016-01-01",
 			"type":"text",
 			"tags":["health","bio"],
 			"category":"Health",
@@ -56,6 +70,8 @@
 			"content":"I have a body"
 		},
 		{
+			"created":"2016-01-01",
+			"last_edit":"2016-01-01",
 			"type":"text",
 			"tags":["health","bio"],
 			"category":"Health",
@@ -63,6 +79,8 @@
 			"content":"I have a body"
 		},
 		{
+			"created":"2016-01-01",
+			"last_edit":"2016-01-01",
 			"type":"text",
 			"tags":["health","bio"],
 			"category":"Health",
@@ -70,17 +88,23 @@
 			"content":"I have a body"
 		},
 		{
+			"created":"2016-01-01",
+			"last_edit":"2016-01-01",
 			"type":"collection",
 			"tags":["health","bio"],
 			"category":"Health",
 			"title":"hpCollect",
 			"content":[{
+				"created":"2016-01-01",
+				"last_edit":"2016-01-01",
 				"type":"text",
 				"tags":["health","bio"],
 				"category":"Health",
 				"title":"inCollect1",
 				"content":"I have a body"
 			},{
+				"created":"2016-01-01",
+				"last_edit":"2016-01-01",
 				"type":"text",
 				"tags":["health","bio"],
 				"category":"Health",
@@ -89,6 +113,8 @@
 			}]
 		},
 		{
+			"created":"2016-01-01",
+			"last_edit":"2016-01-01",
 			"type":"text",
 			"tags":["health","bio"],
 			"category":"Health",
