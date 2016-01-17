@@ -580,24 +580,23 @@
 
 			page += "<form style='height:100%; width:100%; top:0; left:0; position:absolute; z-index:10; background:rgb(0,170,220); border-radius:25px;'>";
 
-			
+			//title row			
+			page += "<div style='text-align:center;' class='form-group row'>";
+			page += 	"<div class='col-md-12'>";
+			page += 		"<h2 style='text-align:center;'><br>Title: "+cur.title+"<br></h2>";
+			page += "</div></div>";
 
-			page += "<div class='col-md-12'>";
-			page += "<h2 style='text-align:center;'><br>Title: "+cur.title+"<br></h2>";
-			page += "</div>";
+			
 
 			if(cur.type == "text")
 			{
 				page += "<div style='text-align:center;' class='form-group row'>";
-				page += "<div class='col-md-12'>";
-
-				page += "<fieldset class='form-group'>";
+				page += 	"<div class='col-md-12'>";
+				page += 			"<fieldset class='center-block' style='width:80%;' class='form-group'>";
 				//page += "<p style='text-align:center;'><br>Content: "+cur.content+"</p>";
-				page += "<label for='contentDisplay'>Content</label>";
-
-   				page += "<textarea class='form-control' id='contentDisplay' rows='5'></textarea>";
-
-				page += "</fieldset>";
+				page += 				"<label for='contentDisplay'>Content</label>";
+   				page += 				"<textarea class='form-control' id='contentDisplay' rows='10'></textarea>";
+				page += 			"</fieldset>";
 				page += "</div></div>";
 			}
 			else if(cur.type == "image")
@@ -610,50 +609,35 @@
 			}
 
 
-			//Date Created
+
 			page += "<div style='text-align:center;' class='form-group row'>";
 
-			page += "<div class='col-md-4'>";
-			page += "<label class='form-control-label'>Created: </label>";
-			page += "</div>";
+			page += "<div class='col-md-6'>";
+			page += "<fieldset class='form-group'>";
+			//page += "<legend>Edit</legend>";
 
-			page += "<div class='col-md-8'>";
-			page += "<p class='form-control-static'>"+cur.created+"</p>";
-			page += "</div>";
+			page += "<label class='form-control-label'>Created:</label>";
+			page += "<label class='form-control-static'>"+cur.created+"</label>";
+			page += "<br>";
 
-			page += "</div>";
+			page += "<label class='form-control-label'>Last Edit:</label>";
+			page += "<label class='form-control-static'>"+cur.last_edit+"</label>";
+			page += "<br>";
 
-			//last editied
-			page += "<div style='text-align:center;' class='form-group row'>";
+			page += "<label class='form-control-label'>Tags:</label>";
 
-			page += "<div class='col-md-4'>";
-			page += "<label class='form-control-label'>Last Edit: </label>";
-			page += "</div>";
 
-			page += "<div class='col-md-8'>";
-			page += "<p class='form-control-static'>"+cur.last_edit+"</p>";
-			page += "</div>";
-
-			page += "</div>";
-
-			//tags
-			page += "<div style='text-align:center;' class='form-group row'>";
-
-			page += "<div class='col-md-4'>";
-			page += "<label class='form-control-label'>Tags: </label>";
-			page += "</div>";
-
-			page += "<div class='col-md-8'>";
-			page += "<p class='form-control-static'>";
+			page += "<select multiple class='form-control center-block' style='width:30%;'>";
 			for(i=0;i<cur.tags.length;i++)
 			{
-				page += cur.tags[i] + " ";
+				page += "<option>"+cur.tags[i]+"</option>";
 			}
-			page += "</p>";
-			page += "</div>";
+			
+    		page += "</select>";
+			page += "</fieldset>"
+			page += "</div>";//end col
 
 			page += "</div>";//end row
-
 
 			page += "</form>"; 
 
