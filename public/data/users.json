@@ -9,7 +9,7 @@
             "lName": "Los",
             "profilePic": 0,
             "friends":[1,2,3],
-            "circles":{"fam":{1},"emergency":{3}}
+            "circles":{"fam":[1],"emergency":[3]}
         },
         {
             "id": 1,
