@@ -7,11 +7,42 @@
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+
 <style type="text/css">
+	/*Move body below nav bar*/
     body{
     	padding-top: 70px;
     }
+
+    /*Overlay Form Styles (leaf node popup)*/
+    form.leaf_overlay{
+    	height:100%; 
+    	width:100%; 
+    	position:absolute; 
+    	top:0; 
+    	left:0; 
+    	z-index:10; 
+    	background:rgb(0,170,220); 
+    	border-radius:25px;'
+    }
+
+    /*Sub-form styles*/
+    fieldset.form_border{
+    	border: 1px groove #ddd;
+    	border-color: black;
+    	padding:0px 15px 5px 15px;
+    	margin: 10px 10px 10px 10px;
+	}
+
+	legend.form_border{
+
+		width:inherit;
+		padding:20px 10px 0 10px;
+		border-bottom:none;
+	}
+
 </style>
+
 </head>
 <body>
 
@@ -578,7 +609,7 @@
 
 			var page = "";
 
-			page += "<form style='height:100%; width:100%; top:0; left:0; position:absolute; z-index:10; background:rgb(0,170,220); border-radius:25px;'>";
+			page += "<form class='leaf_overlay'>";
 
 			//title row			
 			page += "<div style='text-align:center;' class='form-group row'>";
@@ -586,18 +617,16 @@
 			page += 		"<h2 style='text-align:center;'><br>Title: "+cur.title+"<br></h2>";
 			page += "</div></div>";
 
+			//content display
+			page += "<div style='text-align:center;' class='form-group row'>";
+			page += "<div class='col-md-12'>";
+			page += "<fieldset class='center-block' style='width:80%;' class='form-group'>";
 			
-
 			if(cur.type == "text")
 			{
-				page += "<div style='text-align:center;' class='form-group row'>";
-				page += 	"<div class='col-md-12'>";
-				page += 			"<fieldset class='center-block' style='width:80%;' class='form-group'>";
-				//page += "<p style='text-align:center;'><br>Content: "+cur.content+"</p>";
-				page += 				"<label for='contentDisplay'>Content</label>";
-   				page += 				"<textarea class='form-control' id='contentDisplay' rows='10'></textarea>";
-				page += 			"</fieldset>";
-				page += "</div></div>";
+				page += "<label for='contentDisplay'>Content</label>";
+   				page += "<textarea class='form-control' id='contentDisplay' rows='8'></textarea>";
+
 			}
 			else if(cur.type == "image")
 			{
@@ -608,36 +637,44 @@
 				page += "<p>MAP!</p>";
 			}
 
+			page += "</fieldset>";
+			page += "</div></div>";
 
 
+			//property editor/viewer
 			page += "<div style='text-align:center;' class='form-group row'>";
 
 			page += "<div class='col-md-6'>";
-			page += "<fieldset class='form-group'>";
-			//page += "<legend>Edit</legend>";
+			page += "<fieldset class='form_border'>";
 
-			page += "<label class='form-control-label'>Created:</label>";
-			page += "<label class='form-control-static'>"+cur.created+"</label>";
+			page += "<legend class='form_border'>";
+			page += "<button class='btn-info' type='button'>Edit</button>";
+			page += "</legend>";
+
+			page += "<label>Created:</label>";
+			page += "<label>"+cur.created+"</label>";
 			page += "<br>";
 
-			page += "<label class='form-control-label'>Last Edit:</label>";
-			page += "<label class='form-control-static'>"+cur.last_edit+"</label>";
+			page += "<label>Last Edit:</label>";
+			page += "<label>"+cur.last_edit+"</label>";
 			page += "<br>";
 
-			page += "<label class='form-control-label'>Tags:</label>";
-
-
-			page += "<select multiple class='form-control center-block' style='width:30%;'>";
+			page += "<div class='center-block'>"
+			page += "<label style='vertical-align:top;'>Tags:</label>";
+			page += "<select multiple style='width:30%;'>";
 			for(i=0;i<cur.tags.length;i++)
 			{
 				page += "<option>"+cur.tags[i]+"</option>";
 			}
-			
     		page += "</select>";
+    		page += "</div>"
+
 			page += "</fieldset>"
 			page += "</div>";//end col
-
 			page += "</div>";//end row
+
+			//membership viewer
+			
 
 			page += "</form>"; 
 
@@ -686,7 +723,7 @@
 				</nav>
 
 
-		<div class="row">
+		<div id="main" class="row">
 			<div id="sidebar" class="col-lg-4">
 				Nothing here
 			</div>
@@ -697,7 +734,7 @@
 		
 		</div>
 		<hr>
-		<div class="row">
+		<div id="footer" class="row">
 			<div class="col-xs-12">
 				<footer>
 					<p>&copy; Noun Project Contributers: Brian Oppenlander, Edward Boatman, Mister Pixel, icon 54, Martha Ormiston, useiconc.com, Creative Stall</p>
