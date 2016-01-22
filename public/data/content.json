@@ -10,7 +10,7 @@
 			"created":"2016-01-01",
 			"last_edit":"2016-01-01",
 			"type":"text",
-			"tags":["home","bio"],
+			"tags":["home","bio","fam"],
 			"category":"Home",
 			"title":"home1",
 			"content":"I live in a home"
@@ -19,7 +19,7 @@
 			"created":"2016-01-01",
 			"last_edit":"2016-01-01",
 			"type":"text",
-			"tags":["work","bio"],
+			"tags":["work","bio","fam"],
 			"category":"Work",
 			"title":"job1",
 			"content":"I have a job"
@@ -46,7 +46,7 @@
 			"created":"2016-01-01",
 			"last_edit":"2016-01-01",
 			"type":"text",
-			"tags":["rec","bio"],
+			"tags":["rec","bio","fam", "work peeps"],
 			"category":"Rec",
 			"title":"rec1",
 			"content":"I have passtimes"
@@ -55,7 +55,7 @@
 			"created":"2016-01-01",
 			"last_edit":"2016-01-01",
 			"type":"text",
-			"tags":["health","bio"],
+			"tags":["emergency"],
 			"category":"Health",
 			"title":"hp1",
 			"content":"I have a body"
@@ -64,7 +64,7 @@
 			"created":"2016-01-01",
 			"last_edit":"2016-01-01",
 			"type":"text",
-			"tags":["health","bio"],
+			"tags":["health","bio","fam"],
 			"category":"Health",
 			"title":"hp2",
 			"content":"I have a body"

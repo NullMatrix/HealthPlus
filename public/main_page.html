@@ -31,13 +31,13 @@
     	border: 1px groove #ddd;
     	border-color: black;
     	padding:0px 15px 5px 15px;
-    	margin: 10px 10px 10px 10px;
+    	margin: 0px 10px 10px 10px;
 	}
 
 	legend.form_border{
 
 		width:inherit;
-		padding:20px 10px 0 10px;
+		padding:0px 10px 0 10px;
 		border-bottom:none;
 	}
 
@@ -240,6 +240,74 @@
 			console.log(parent);
 			return parent;
 		}
+
+		//generate the list of the current user's circles that can access a given piece of data
+		function accessListCircles(data)
+		{	
+			//list of groups with access to data
+			var accessList = new Array;
+
+			//retrieve the tags from the data in question
+			var tags = data.tags;
+
+			//retrieve the current user's access control info
+			var circles = userProfile.circles;
+
+			//for each circle defined by the user
+			$.each(Object.keys(circles), function(i,cirVal){
+				//loop through the list of tags with access to current data
+				for(i=0;i<tags.length;i++)
+				{
+					//and check if that tag is in the circle's tags
+					if($.inArray(tags[i],circles[cirVal].tags) > -1)
+					{
+						//if so add name of circle to return list
+						accessList.push(cirVal);
+						break;
+					}
+				}
+			});
+
+			return accessList;
+		}
+
+		//generate the list of the current user's friends that can access a given piece of data
+		function accessListUsers(data)
+		{	
+			//list of groups with access to data
+			var accessList = new Array;
+
+			//retrieve the tags from the data in question
+			var tags = data.tags;
+
+			//retrieve the current user's access control info
+			var circles = userProfile.circles;
+
+			//for each circle defined by the user
+			$.each(Object.keys(circles), function(i,cirVal){
+				//loop through the list of tags with access to current data
+				for(i=0;i<tags.length;i++)
+				{
+					//and check if that tag is in the circle's tags
+					if($.inArray(tags[i],circles[cirVal].tags) > -1)
+					{	
+
+						//add each member of the circle to the access list if they aren't in it
+						$.each(circles[cirVal].members, function(i,userVal){
+
+							if($.inArray(userVal,accessList) < 0){
+								accessList.push(userVal);
+							}
+
+						});
+						break;
+					}
+				}
+			});
+
+			return accessList;
+		}
+
 
 
 		/************************
@@ -607,6 +675,7 @@
 		//builds a viewer/editor for the specific type of data  selected
 		function buildDataLeaf(cur){
 
+
 			var page = "";
 
 			page += "<form class='leaf_overlay'>";
@@ -641,9 +710,10 @@
 			page += "</div></div>";
 
 
-			//property editor/viewer
+			
 			page += "<div style='text-align:center;' class='form-group row'>";
 
+			//property editor/viewer
 			page += "<div class='col-md-6'>";
 			page += "<fieldset class='form_border'>";
 
@@ -671,10 +741,68 @@
 
 			page += "</fieldset>"
 			page += "</div>";//end col
-			page += "</div>";//end row
 
 			//membership viewer
+			page += "<div class='col-md-6'>";
+			page += "<fieldset class='form_border'>";
+
+
+			//radio buttons to switch between seeing circle access and user access
+			page += "<legend class='form_border'>";
+			page += "<div class='radio-inline'>"
+    		page += "<label>"
+      		page += "<input type='radio' name='accessList' id='cirAccessRdo' value='1' checked>"
+      		page += "Circles"
+ 			page += "</label>"
+  			page += "</div>"
+
+  			page += "<div class='radio-inline'>"
+    		page += "<label>"
+      		page += "<input type='radio' name='accessList' id='userAccessRdo' value='2'>"
+      		page += "People"
+    		page += "</label>"
+  			page += "</div>"
+  			page += "</legend>";
+
+
+			page += "<div class='center-block'>"
+			page += "<label style='vertical-align:top;'>Circles with Access:</label>";
+			page += "<select multiple disabled style='width:30%;'>";
+
+			//generate access list
+			var circles = accessListCircles(cur);
+			console.log(accessListUsers(cur));
+
+			for(i=0;i<circles.length;i++)
+			{
+				page += "<option>"+circles[i]+"</option>";
+			}
+    		page += "</select>";
+    		page += "</div>"
+
+			page += "</fieldset>"
+			page += "</div>";//end col
+
+
+			page += "</div>";//end row
+
 			
+			page += "<div style='text-align:center;' class='form-group row'>";
+
+			page += "<div class='col-md-12'>";
+
+			page +=  "<button type='button' style='btn-primary inline' onclick='dataNavControl(this)' value='up' style='height:25%; width:100%;'>";
+			page += "Back"; 
+			page += "</button>";
+			page +=  "<button type='button' style='btn-primary' style='height:25%; width:100%;'>";
+			page += "Commit"; 
+			page += "</button>";
+
+
+			page += "</div>"; //end col
+
+			page += "</div>"; //end row
+
 
 			page += "</form>"; 
 

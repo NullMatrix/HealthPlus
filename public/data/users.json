@@ -9,7 +9,10 @@
             "lName": "Los",
             "profilePic": 0,
             "friends":[1,2,3],
-            "circles":{"fam":[1],"emergency":[3]}
+            "circles":{
+                "fam":{"tags":["fam","bio"],"members":[1,2,3]},
+                "emergency":{"tags":["emergency","bio"],"members":[3]}, 
+                "work peeps":{"tags":["work peeps", "work"],"members":[1,2]}}
         },
         {
             "id": 1,
