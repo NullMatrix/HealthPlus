@@ -29,9 +29,39 @@ app.get('/asset/:path', function (req, res) {
    res.sendFile(path.join(__dirname,'assets/',req.params.path+'.png'));
 })
 
+//Retrieve basic info (name + profile pic id) given a list fo users
+app.get('/userset', function (req, res) {
+  console.log("Got "+req.method+" userset request for set:" + req.query.users);
+
+  
+
+  var accJSN = JSON.parse(fs.readFileSync(path.join(__dirname,'/public/data/users.json')));
+  accJSN = accJSN.users;
+
+  var users = JSON.parse(req.query.users);
+
+  var resJSN = new Array;
+
+  for(var i=0;i<users.length;i++)
+  {
+    //build a simplified user object and add it to the response
+    var temp = {};
+    temp["id"] = users[i];
+    temp["fName"] = accJSN[users[i]].fName;
+    temp["lName"] = accJSN[users[i]].lName;
+    temp["profilePic"] = accJSN[users[i]].profilePic; 
+    resJSN.push(temp);
+  }
+
+  console.log("Sending: " + JSON.stringify(resJSN));
+  
+  res.setHeader('Content-Type', 'application/json'); 
+  res.json(resJSN);
+
+})
 
 
-//test json data retrieve
+//Retrieve data elements from json storage
 app.get('/data/:asset/:id', function (req, res) {
 
   console.log("Got "+req.method+" data request, asset: "+req.params.asset+" id: "+req.params.id);
@@ -46,7 +76,7 @@ app.get('/data/:asset/:id', function (req, res) {
     accJSN = JSON.parse(fs.readFileSync(path.join(__dirname,'/public/data/users.json')));
 
     //return profile with id num
-    res.send(JSON.stringify(accJSN.users[req.params.id]));
+    res.json(accJSN.users[req.params.id]);
   }
   else if(req.params.asset === "content")
   { 
@@ -56,12 +86,12 @@ app.get('/data/:asset/:id', function (req, res) {
     if(req.params.id === "meta")
     {
       //return data metadata
-      res.send(JSON.stringify(accJSN.meta));
+      res.json(accJSN.meta);
     }
     else
     {
       //return data with id num
-      res.send(JSON.stringify(accJSN.data[req.params.id]));
+      res.json(accJSN.data[req.params.id]);
     }
     
   }
@@ -97,6 +127,7 @@ app.get('/data/:path', function (req, res) {
   res.send(JSON.stringify(accJSN.users[req.query.id]));
 })
 */
+
 /*
 // This responds a POST request for the homepage
 app.post('/', function (req, res) {

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Main Page Proto</title>
+<title>Health+</title>
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
@@ -41,6 +41,20 @@
 		border-bottom:none;
 	}
 
+	/*
+	div.tooltip {
+        position: absolute;
+        text-align: center;
+        width: 130px;
+        height: 75px;
+        padding: 6px;
+        font: 12px sans-serif;
+        border: 0px;
+        border-radius: 8px;
+        pointer-events: none;
+    }
+    */
+
 </style>
 
 </head>
@@ -52,6 +66,8 @@
 		/************************
 		*	      Global        *
 		*************************/
+		//user id of particpant account, to generalize have this value changed based on login credentials
+		var ROOTUSER = 0;
 
 		//logged in user profile
 		var userProfile
@@ -82,34 +98,16 @@
 		};
 		
 		//fetch profile and user data
-		userProfile = getUser(0);
-		userContent = getContent(0);
+		userProfile = getUser(ROOTUSER);
+		userContent = getContent(ROOTUSER);
 		contentMetadata = getContentMeta();
 
 		//generate content tree
 
 		//copy root node from metadata
-		contentRoot = jQuery.extend(true, {}, contentMetadata.root_struct);
+		contentRoot = buildRootNode();
 
-		//Generate node for every known category
-		var catNodes = {};
-
-		$.each(contentMetadata.categories,function(i,val){
-			catNodes[val] = jQuery.extend(true, {}, contentMetadata.root_struct);
-			catNodes[val].type = "category";
-			catNodes[val].category = val;
-		});
-
-		//Sort user content into default categories
-		for(i=0;i<userContent.length;i++)
-		{
-			//record id for edit/delete 
-			var tmpContent =jQuery.extend(true,{}, userContent[i]);
-			tmpContent["id"] = i;
-
-			catNodes[userContent[i].category]["content"].push(tmpContent);
-			
-		}
+		var catNodes = fillCategoryNodes(buildCategoryNodes());
 
 		//add category nodes to root
 		$.each(catNodes, function(i,val){contentRoot["content"].push(val);});
@@ -132,6 +130,100 @@
 		/************************
 		*	 Helper Functions   *
 		*************************/
+
+		function buildRootNode()
+		{
+			return jQuery.extend(true, {}, contentMetadata.root_struct);
+
+		}
+
+		//generate nodes for all categories and sort user content into each
+		function buildCategoryNodes()
+		{
+
+			//Generate node for every known category
+			var catNodes = {};
+
+			$.each(contentMetadata.categories,function(i,val){
+				catNodes[val] = jQuery.extend(true, {}, contentMetadata.root_struct);
+				catNodes[val].type = "category";
+				catNodes[val].category = val;
+			});
+
+			
+
+			return catNodes;
+		}
+
+		//takes an object with category nodes and sorts and adds user content by category
+		function fillCategoryNodes(catNodes)
+		{
+			//Sort user content into default categories
+			for(i=0;i<userContent.length;i++)
+			{
+				//record id for edit/delete 
+				var tmpContent =jQuery.extend(true,{}, userContent[i]);
+				tmpContent["id"] = i;
+
+				catNodes[userContent[i].category]["content"].push(tmpContent);
+				
+			}
+			return catNodes;
+
+		}
+
+
+		//prune view tree based on some user's view permissions 
+		function buildViewTree(userID)
+		{
+			//if user views themself allow unrestricted view
+			if(userID == ROOTUSER)
+			{
+				contentView = jQuery.extend(true,{}, contentRoot);
+				contentNav =  contentView;
+				return;
+			}
+
+			var userPermissions = [];
+			$.each(userProfile.circles, function(i, cir){
+				if($.inArray(userID, cir.members) >=0 )
+				{
+					$.each(cir.tags,function(i,tag){
+
+						var position;
+
+						position = userPermissions.indexOf(tag);
+
+						if (!~position) {
+						  userPermissions.push(tag);
+						}
+					});
+				}
+			});
+
+			//build empty category nodes
+			var catNodes = buildCategoryNodes();
+
+			//Sort user content into categories
+			for(i=0;i<userContent.length;i++)
+			{
+				//record id for edit/delete 
+				var tmpContent =jQuery.extend(true,{}, userContent[i]);
+				tmpContent["id"] = i;
+
+				var permisIntersect = $(userPermissions).not($(userPermissions).not(userContent[i].tags));
+
+				//@TODO only add nodes which user has permission on
+				if(permisIntersect.length > 0)
+				{
+					console.log(userContent[i].title)
+					console.log(permisIntersect)
+					catNodes[userContent[i].category]["content"].push(tmpContent);
+				}
+			}
+			
+
+		}//end buildViewTree
 
 		//return true if type of node is a leaf type, important so content attribute can be correctly interpreted
 		function isLeafNode(cur)
@@ -237,12 +329,12 @@
 			if(parent.id === 'undefined'){return catNode;}//categories have no id
 			else if(parent.id === -1){return {"type":"blank"};} //id of -1 indicates no match found for child
 			//otherwise parent found
-			console.log(parent);
+
 			return parent;
 		}
 
 		//generate the list of the current user's circles that can access a given piece of data
-		function accessListCircles(data)
+		function accessListCircles(data = contentNav)
 		{	
 			//list of groups with access to data
 			var accessList = new Array;
@@ -272,7 +364,7 @@
 		}
 
 		//generate the list of the current user's friends that can access a given piece of data
-		function accessListUsers(data)
+		function accessListUsers(data = contentNav)
 		{	
 			//list of groups with access to data
 			var accessList = new Array;
@@ -305,8 +397,16 @@
 				}
 			});
 
-			return accessList;
+			var userNames = new Array;
+			$.each(getUserset(accessList), function(i,val){
+				userNames.push(val.fName +" "+val.lName);
+
+			});
+
+			return userNames;
 		}
+
+		
 
 
 
@@ -330,8 +430,7 @@
 
 			//button handlers
 			if( buttonClickedId === 'btnCircles' ){
-				document.getElementById("sidebar").innerHTML= "";
-				//console.log(getContentMeta());
+				document.getElementById("sidebar").innerHTML= buildSidebarCircles();
 				
 			}
 			else if( buttonClickedId === 'btnPeople' ){
@@ -343,8 +442,13 @@
 				document.getElementById("dataview").innerHTML= buildMainDataview(contentNav);
 			}
 			else{
+				/*
 				document.getElementById("sidebar").innerHTML=
 				"<p>"+buttonClickedId+"</p>";
+				*/
+				buildViewTree(3);
+				contentNav = contentView;
+				document.getElementById("dataview").innerHTML = buildMainDataview(contentNav);
 			}
 
 		}
@@ -437,10 +541,79 @@
 			return;
 		}
 
+		function accessListViewChange(radioElement)
+		{
+
+			var newList = "";
+			var newData = new Array;
+
+			//select the correct access list based on radio selected
+			if(radioElement.value === "circle")
+			{
+				newData = accessListCircles();
+			}
+			else
+			{
+				newData = accessListUsers();
+			}
+
+			//build up a valid html string replacement for the list element
+			for(i=0;i<newData.length;i++)
+			{
+				newList += "<li>"+newData[i]+"</li>";
+			}
+  
+  			//find the access display and replace the list elements
+    		document.getElementById("dataACList").innerHTML = newList;
+
+		}
+
+
+		function sidebarUserOptions(buttonelement)
+		{
+
+			console.log("User ID: " + $(buttonelement).parent().attr('value') + " Button: " + buttonelement.value);
+
+			if(buttonelement.value === "view")
+			{
+				console.log("VIEW!");
+
+			}
+			else if(buttonelement.value === "visit")
+			{
+				console.log("VISIT");
+			}
+			else if(buttonelement.value === "edit")
+			{
+				console.log("EDIT");
+			}
+
+		}
 
 		/************************
 		*	Query Functions   *
 		*************************/
+
+		function getUserset(ids,last) {
+			//async query the server for a profile and return JSON obj
+
+			userQuery = "";
+
+			//build query string from ids provided
+			for(i=0;i<ids.length;i++)
+			{
+				userQuery += ids[i] + ",";
+			}
+			//remove trailing comma
+			userQuery = userQuery.slice(0,-1);
+
+		    return $.ajax({
+		        type: "GET",
+		        url: "/userset?users=["+userQuery+"]",
+		        async: false
+
+		    }).responseJSON;
+		}
 
 		function getUser(id,last) {
 			//async query the server for a profile and return JSON obj
@@ -483,11 +656,11 @@
 		function buildSidebarPeople()
 		{
 
-				var side = ""
+				var side = "";
 
-				side += "<ul class='list-group' style='width:350px;'>"
+				side += "<ul class='list-group' style='width:350px;'>";
 
-				var friend = {}
+				var friend = {};
 				for(var i=0; i<userProfile.friends.length;i++)
 				{
 
@@ -495,15 +668,37 @@
 					friend = getUser(userProfile.friends[i]);
 
 					//console.log(friend)
-					side += "<li href='#' class='list-group-item' style='height:75px'>"
-					side += "<img src='/asset/"+friend.id+"' height=20 width=20></img>"
-					side += friend.fName +" "+friend.lName
-					side += "</li>"
+					side += "<li href='#' class='list-group-item' value="+friend.id+" style='height:75px'>";
+					side += "<img src='/asset/"+friend.id+"' height=20 width=20></img>";
+					side += friend.fName +" "+friend.lName +" ";
+					side += "<button type='button' onclick='sidebarUserOptions(this)' value='view' style='height:95%; width:15%;'>View</button>";
+					side += "<button type='button' onclick='sidebarUserOptions(this)' value='visit' style='height:95%; width:15%;'>Visit</button>";
+					side += "<button type='button' onclick='sidebarUserOptions(this)' value='edit' style='height:95%; width:15%;'>Edit</button>";
+					side += "</li>";
 				}
-				side += "</ul>"
+				side += "</ul>";
 				
 
-				return side
+				return side;
+		}
+
+		function buildSidebarCircles()
+		{
+
+				var side = "";
+
+				side += "<ul class='list-group' style='width:350px;'>";
+
+				$.each(Object.keys(userProfile.circles), function(i,val){
+					side += "<li href='#' class='list-group-item' style='height:75px'>";
+					side += "<img src='/asset/"+userProfile.circles[val].image+"' height=20 width=20></img>";
+					side += val;
+					side += "</li>";
+				});
+
+				side += "</ul>";
+
+				return side;
 		}
 
 		//function used to reload data view
@@ -711,10 +906,10 @@
 
 
 			
-			page += "<div style='text-align:center;' class='form-group row'>";
+			page += "<div class='form-group row'>";
 
 			//property editor/viewer
-			page += "<div class='col-md-6'>";
+			page += "<div style='text-align:center;' class='col-md-6'>";
 			page += "<fieldset class='form_border'>";
 
 			page += "<legend class='form_border'>";
@@ -729,9 +924,9 @@
 			page += "<label>"+cur.last_edit+"</label>";
 			page += "<br>";
 
-			page += "<div class='center-block'>"
+			page += "<div style='text-align:center;'>"
 			page += "<label style='vertical-align:top;'>Tags:</label>";
-			page += "<select multiple style='width:30%;'>";
+			page += "<select multiple disabled style='width:30%;'>";
 			for(i=0;i<cur.tags.length;i++)
 			{
 				page += "<option>"+cur.tags[i]+"</option>";
@@ -743,7 +938,7 @@
 			page += "</div>";//end col
 
 			//membership viewer
-			page += "<div class='col-md-6'>";
+			page += "<div style='text-align:center;' class='col-md-6'>";
 			page += "<fieldset class='form_border'>";
 
 
@@ -751,33 +946,32 @@
 			page += "<legend class='form_border'>";
 			page += "<div class='radio-inline'>"
     		page += "<label>"
-      		page += "<input type='radio' name='accessList' id='cirAccessRdo' value='1' checked>"
+      		page += "<input type='radio' name='accessList' onclick='accessListViewChange(this)' id='cirAccessRdo' value='circle' checked>"
       		page += "Circles"
  			page += "</label>"
   			page += "</div>"
 
   			page += "<div class='radio-inline'>"
     		page += "<label>"
-      		page += "<input type='radio' name='accessList' id='userAccessRdo' value='2'>"
+      		page += "<input type='radio' name='accessList' onclick='accessListViewChange(this)' id='userAccessRdo' value='user'>"
       		page += "People"
     		page += "</label>"
   			page += "</div>"
   			page += "</legend>";
 
 
-			page += "<div class='center-block'>"
-			page += "<label style='vertical-align:top;'>Circles with Access:</label>";
-			page += "<select multiple disabled style='width:30%;'>";
+			page += "<div style='display:inline-block;'>"
+			page += "<label style='vertical-align:top;'>Access:</label>";
+			page += "<ul id='dataACList' style='list-style-type:none; width:100%;'>";
 
 			//generate access list
 			var circles = accessListCircles(cur);
-			console.log(accessListUsers(cur));
 
 			for(i=0;i<circles.length;i++)
 			{
-				page += "<option>"+circles[i]+"</option>";
+				page += "<li>"+circles[i]+"</li>";
 			}
-    		page += "</select>";
+    		page += "</ul>";
     		page += "</div>"
 
 			page += "</fieldset>"
@@ -853,7 +1047,12 @@
 
 		<div id="main" class="row">
 			<div id="sidebar" class="col-lg-4">
-				Nothing here
+				<h2>Announcements</h2>
+				<ul>
+					<li><p>Welcome back! Health Plus is glad to have you!</p></li>
+					<li><p>Health Plus will be down for scheduled maintenance on February 2nd 01:00:00GMT. Thank you for your patience and understanding.</p></li>
+					<li><p>Next month we are proud to announce we will be rolling out our newest feature, Fitness Plus! You'll be able to add a record (public or private) of your physical activities and calorie intake to help you meet your fitness goals. Stay Healthy! </p></li>
+				</ul>
 			</div>
 			<div class="col-lg-8">
 				<div id="dataview" class="jumbotron"style="height:610px;width:700;padding:5px;">

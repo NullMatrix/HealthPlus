@@ -10,9 +10,9 @@
             "profilePic": 0,
             "friends":[1,2,3],
             "circles":{
-                "fam":{"tags":["fam","bio"],"members":[1,2,3]},
-                "emergency":{"tags":["emergency","bio"],"members":[3]}, 
-                "work peeps":{"tags":["work peeps", "work"],"members":[1,2]}}
+                "fam":{"tags":["fam","bio"],"members":[1,2,3],"image":"bone"},
+                "emergency":{"tags":["emergency","bio"],"members":[3],"image":"bone"}, 
+                "work peeps":{"tags":["work peeps", "work"],"members":[1,2],"image":"bone"}}
         },
         {
             "id": 1,
