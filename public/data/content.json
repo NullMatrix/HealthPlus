@@ -110,6 +110,14 @@
 				"category":"Health",
 				"title":"inCollect2",
 				"content":"I have a body"
+			},{
+				"created":"2016-01-01",
+				"last_edit":"2016-01-01",
+				"type":"text",
+				"tags":["secret"],
+				"category":"Health",
+				"title":"inCollect no permis",
+				"content":"nobody can see me!"
 			}]
 		},
 		{

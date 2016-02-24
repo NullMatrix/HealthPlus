@@ -104,6 +104,121 @@ app.get('/data/:asset/:id', function (req, res) {
 
 })
 
+app.get('/visitUser', function (req, res) {
+  //request params need to include:
+  //fromUser - user id of the user initiating the visit
+  var fromUser = parseInt(req.query.from);
+  //toUser - the user who's data is being viewed
+  var toUser = parseInt(req.query.to);
+
+  //generate permission intersect
+    
+    //create distinct list of tags using circle memberships and fromUser id
+
+  var userPermissions = [];
+
+  //toUser circle info pulled from all accounts
+  var userAccts = JSON.parse(fs.readFileSync(path.join(__dirname,'/public/data/users.json')));
+  var circles = userAccts.users[toUser].circles;
+
+  //generate list of tags from user has access to see on to user
+  for(c in circles)
+  {
+    if(circles[c].members.indexOf(fromUser)>=0)
+    {
+      for(i=0;i< circles[c].tags.length;i++)
+      {
+        if(userPermissions.indexOf(circles[c].tags[i])<0)
+        {
+          userPermissions.push(circles[c].tags[i]);
+        }
+      } 
+    }
+  }
+  console.log(userPermissions);
+
+
+  //pull toUser content
+  var userContent = JSON.parse(fs.readFileSync(path.join(__dirname,'/public/data/content.json')));
+  userContent = userContent.data[toUser];
+
+    
+  //function to remove data which from user does not have access to
+  var trim = function(data, permissions)
+  {
+    var access = false;
+    //get intersect between permissions and data tags
+    for(i=0;i<permissions.length;i++)
+    {
+      if(data.tags.indexOf(permissions[i])>=0)
+      {
+        access = true;
+        break;
+      }
+    }
+
+    //if no intersect return null
+    if(!access)
+    {
+      return null;
+    }
+
+    //if leaf type return data
+    if(data.type != "collection")
+    {
+      return data;
+    }
+
+    //declare empty recur array
+    var newContent = [];
+
+    //for each in data.content
+    for(j=0;j<data.content.length;j++)
+    {
+      //recur with content
+      var tmp = trim(data.content[j],permissions);
+      //if recur does not return null
+      if(tmp)
+      {
+        //add id to node
+        tmp["id"]=j;
+        //push node to recur array
+        newContent.push(tmp);
+      }
+    }
+
+    //set data.content to recur array
+    data.content = newContent;
+    return data;
+  }
+
+  var returnContent = [];
+
+  //for each content
+  for(k=0;k<userContent.length;k++)
+  {
+    //add the id to the content
+    userContent[k]["id"]=k;
+    //trim the content
+    var tmp = trim(userContent[k],userPermissions);
+
+    //if trimmed content is not null add to return object
+    if(tmp)
+    {
+      returnContent.push(tmp);
+    }
+
+  }
+
+  console.log(returnContent)
+
+  //send content
+  res.setHeader('Content-Type', 'application/json');
+  res.json(returnContent);
+
+
+})
+
 
 /*
 //test json data retrieve

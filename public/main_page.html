@@ -70,19 +70,30 @@
 		var ROOTUSER = 0;
 
 		//logged in user profile
-		var userProfile
+		var userProfile;
 
 		//logged in user's data and metadata
-		var userContent
-		var contentMetadata
+		var userContent;
+		var contentMetadata;
 
 		//The content to be displayed on current page
 		//root of the full content tree
-		var contentRoot 
+		var contentRoot;
 		//copy of the content tree trimmed by view permissions
-		var contentView
+		var contentView;
 		//reference to location in contentView for display
-		var contentNav
+		var contentNav;
+
+		//View state so all components can be build accourdingly. Possible States:
+		//owner - logged in user viewing own account as self
+		//view - user viewing own account as another user
+		//visit - user viewing another account basd on their permissions
+		var viewState = "owner";
+
+		//user id of user owner account being viewed as
+		var viewUser;
+		//user id of user being visited
+		var visitUser;
 
 		/************************
 		*	     On Load        *
@@ -165,8 +176,26 @@
 				var tmpContent =jQuery.extend(true,{}, userContent[i]);
 				tmpContent["id"] = i;
 
-				catNodes[userContent[i].category]["content"].push(tmpContent);
+				//function to recursively inject ID values into the data tree
+				var injectID = function(curNode){
 				
+					if(curNode.type == "text" || curNode.type == "image" || curNode.type == "map" || curNode.type == "journal")
+					{return;}
+
+					//add id to each node in collection based on it's position in the parent array
+					$.each(curNode.content,function(i,val){
+
+						val["id"] = i;
+
+						if(val.type == "collection"){
+							injectID(val);
+						}
+					});
+				};
+
+				injectID(tmpContent);
+
+				catNodes[userContent[i].category]["content"].push(tmpContent);
 			}
 			return catNodes;
 
@@ -176,6 +205,8 @@
 		//prune view tree based on some user's view permissions 
 		function buildViewTree(userID)
 		{
+			userID = parseInt(userID);
+
 			//if user views themself allow unrestricted view
 			if(userID == ROOTUSER)
 			{
@@ -190,9 +221,7 @@
 				{
 					$.each(cir.tags,function(i,tag){
 
-						var position;
-
-						position = userPermissions.indexOf(tag);
+						var position = userPermissions.indexOf(tag);
 
 						if (!~position) {
 						  userPermissions.push(tag);
@@ -207,21 +236,69 @@
 			//Sort user content into categories
 			for(i=0;i<userContent.length;i++)
 			{
+
 				//record id for edit/delete 
 				var tmpContent =jQuery.extend(true,{}, userContent[i]);
 				tmpContent["id"] = i;
 
-				var permisIntersect = $(userPermissions).not($(userPermissions).not(userContent[i].tags));
 
-				//@TODO only add nodes which user has permission on
-				if(permisIntersect.length > 0)
+				//function to recursively remove data with insufficient permissions
+				var trim = function(curNode, userPermis){
+
+
+					//get an object which is contains the intersecting tags between  
+					//the user permissions and current data tags
+					var permisIntersect = $(userPermis).not($(userPermis).not(curNode.tags));
+
+					//no shared permissions, return null
+					if(permisIntersect.length < 1)
+					{
+						return null;
+					}					
+
+					//leaf node types should return themself on match, journal entries share permissions with their parent 
+					if(curNode.type == "text" || curNode.type == "image" || curNode.type == "map" || curNode.type == "journal")
+					{
+						return curNode;
+					}
+
+					//collections must be recursively pruned
+
+					var newContent = [];
+					$.each(curNode.content,function(i,val){
+
+						var tmp = trim(val, userPermis);
+						//if not null add orginal id (for editing later) and add to content
+						if(tmp){
+							tmp["id"]=i;
+							newContent.push(tmp);
+						}
+					});
+
+					curNode.content = newContent;
+					return curNode;
+
+
+				};
+
+				tmpContent = trim(tmpContent,userPermissions);
+
+				//only add nodes which user has a matching permission
+				if(tmpContent)
 				{
-					console.log(userContent[i].title)
-					console.log(permisIntersect)
+					
 					catNodes[userContent[i].category]["content"].push(tmpContent);
 				}
 			}
+
 			
+
+			var viewRoot = buildRootNode();
+
+			//add category nodes to root
+			$.each(catNodes, function(i,val){viewRoot["content"].push(val);});
+			
+			return viewRoot;
 
 		}//end buildViewTree
 
@@ -430,12 +507,12 @@
 
 			//button handlers
 			if( buttonClickedId === 'btnCircles' ){
-				document.getElementById("sidebar").innerHTML= buildSidebarCircles();
+				document.getElementById("sidebar").innerHTML= buildMainSidebar("circles");
 				
 			}
 			else if( buttonClickedId === 'btnPeople' ){
 				
-				document.getElementById("sidebar").innerHTML= buildSidebarPeople();
+				document.getElementById("sidebar").innerHTML= buildMainSidebar("people");
 			}
 			else if( buttonClickedId === 'btnData' ){
 
@@ -446,9 +523,10 @@
 				document.getElementById("sidebar").innerHTML=
 				"<p>"+buttonClickedId+"</p>";
 				*/
-				buildViewTree(3);
-				contentNav = contentView;
-				document.getElementById("dataview").innerHTML = buildMainDataview(contentNav);
+				//contentView = buildViewTree(3);
+				//contentNav = contentView;
+				//document.getElementById("dataview").innerHTML = buildMainDataview(contentNav);
+				console.log(getVisitContent(0,3));
 			}
 
 		}
@@ -457,6 +535,7 @@
 		//moves the data nav ptr and rebuilds data view html
 		function dataNavChange(buttonElement)
 		{	
+
 			//if contentNav type is root handle category selection
 			if(contentNav.type === "root")
 			{
@@ -484,6 +563,9 @@
 			//find the selected node and move the nav
 			for(i=0;i<contentNav.content.length;i++)
 			{
+				//console.log(view[select]);
+				//console.log(contentNav.content[i]);
+
 				if(view[select].id == contentNav.content[i].id)
 				{
 					contentNav = contentNav.content[i];
@@ -492,6 +574,8 @@
 				}
 
 			}
+
+
 
 			//reload dataview (add overlay for leaf)
 			if(isLeafNode(contentNav))
@@ -538,6 +622,7 @@
 
 			//reload view with new/changed data
 			document.getElementById("dataview").innerHTML = buildMainDataview(contentNav);
+			document.getElementById("sidebar").innerHTML = buildMainSidebar("people");
 			return;
 		}
 
@@ -572,11 +657,20 @@
 		function sidebarUserOptions(buttonelement)
 		{
 
-			console.log("User ID: " + $(buttonelement).parent().attr('value') + " Button: " + buttonelement.value);
+			//console.log("User ID: " + $(buttonelement).parent().attr('value') + " Button: " + buttonelement.value);
 
 			if(buttonelement.value === "view")
 			{
-				console.log("VIEW!");
+				//@TODO - add changes to sidebar (or elsewhere) to make it obvious you are now viewing as user
+				//@TODO - Add an obvious way to view as root again  
+
+				viewState = "view"; 
+				viewUser = $(buttonelement).parent().attr('value');
+
+				contentView = buildViewTree($(buttonelement).parent().attr('value'));
+				contentNav = contentView;
+				document.getElementById("dataview").innerHTML = buildMainDataview(contentNav);
+				document.getElementById("sidebar").innerHTML = buildMainSidebar("people");
 
 			}
 			else if(buttonelement.value === "visit")
@@ -586,6 +680,14 @@
 			else if(buttonelement.value === "edit")
 			{
 				console.log("EDIT");
+			}
+			else if(buttonelement.value === "viewExit")
+			{
+				viewState = "owner"; 
+				contentView = jQuery.extend(true,{}, contentRoot);;
+				contentNav = contentView;
+				document.getElementById("dataview").innerHTML = buildMainDataview(contentNav);
+				document.getElementById("sidebar").innerHTML = buildMainSidebar("people");
 			}
 
 		}
@@ -648,16 +750,87 @@
 		    }).responseJSON;
 		}
 
+		function getVisitContent(toUser, fromUser, last){
+
+			return $.ajax({
+		        type: "GET",
+		        url: "/visitUser?to="+toUser+"&from="+fromUser,
+		        async: false
+
+		    }).responseJSON;
+		}
+
 		/************************
 		*	Builder Functions   *
 		*************************/
+
+
+
+		//function used to reload data view
+		function buildMainDataview(cur)
+		{
+
+			//if root node create special category selection controls
+			if(cur.type === "root")
+				{return buildDataHomepage(cur);}
+
+			//if cur ptr is a leaf create a data editor overlay
+			if(isLeafNode(cur))
+				{return buildDataLeaf(cur);}
+
+			return buildDataCollection(cur);		
+		}
+
+		function buildMainSidebar(tab)
+		{
+			var sidebar = ""
+
+			if(tab == "people")
+			{
+				sidebar = buildSideBarMessages() + buildSidebarPeople();
+			}
+			else if(tab == "circles")
+			{
+				sidebar = buildSideBarMessages() + buildSidebarCircles();
+			}
+			else if(tab == "data")
+			{
+				sidebar = buildSideBarMessages();
+
+			}
+
+			return sidebar;
+
+		}
+
+
+
+
+
+		function buildSideBarMessages()
+		{
+			var side = "";
+
+			if(viewState == "view")
+			{
+				side += "<p>VIEWING AS: ";
+
+				var viewUserTemp = getUser(viewUser);
+				side += viewUserTemp.fName + " " + viewUserTemp.lName;
+
+				side += "<button type='button' onclick='sidebarUserOptions(this)' value='viewExit' style='height:95%; width:15%;'>Exit View</button>";
+				side += "</p>"
+			}
+
+			return side; 
+
+		}
 
 		//return html for side bar view of friends
 		function buildSidebarPeople()
 		{
 
 				var side = "";
-
 				side += "<ul class='list-group' style='width:350px;'>";
 
 				var friend = {};
@@ -701,21 +874,7 @@
 				return side;
 		}
 
-		//function used to reload data view
-		function buildMainDataview(cur)
-		{
-
-			//if root node create special category selection controls
-			if(cur.type === "root")
-				{return buildDataHomepage(cur);}
-
-			//if cur ptr is a leaf create a data editor overlay
-			if(isLeafNode(cur))
-				{return buildDataLeaf(cur);}
-
-			return buildDataCollection(cur);		
-		}
-
+		
 		//builder function for root node view with selection options for each availible category
 		//collections are taken from the metadata in the content storage
 		function buildDataHomepage(root)
@@ -1003,8 +1162,15 @@
 			return page;
 		}
 
+		//@TODO builder for comfirmation popup when making edits in data view
+		function buildComfPage()
+		{
+
+		}
 
 	</script>
+
+
 
 	<div class="container">
 		
