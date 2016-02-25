@@ -135,7 +135,6 @@ app.get('/visitUser', function (req, res) {
       } 
     }
   }
-  console.log(userPermissions);
 
 
   //pull toUser content
@@ -209,8 +208,6 @@ app.get('/visitUser', function (req, res) {
     }
 
   }
-
-  console.log(returnContent)
 
   //send content
   res.setHeader('Content-Type', 'application/json');

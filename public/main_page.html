@@ -203,95 +203,19 @@
 
 
 		//prune view tree based on some user's view permissions 
-		function buildViewTree(userID)
+		function buildViewTree(viewAsUserID)
 		{
-			userID = parseInt(userID);
+			viewAsUserID = parseInt(viewAsUserID);
 
-			//if user views themself allow unrestricted view
-			if(userID == ROOTUSER)
-			{
-				contentView = jQuery.extend(true,{}, contentRoot);
-				contentNav =  contentView;
-				return;
-			}
+			var viewContent = [];
+			viewContent = getVisitContent(ROOTUSER,viewAsUserID);
 
-			var userPermissions = [];
-			$.each(userProfile.circles, function(i, cir){
-				if($.inArray(userID, cir.members) >=0 )
-				{
-					$.each(cir.tags,function(i,tag){
-
-						var position = userPermissions.indexOf(tag);
-
-						if (!~position) {
-						  userPermissions.push(tag);
-						}
-					});
-				}
-			});
 
 			//build empty category nodes
 			var catNodes = buildCategoryNodes();
 
-			//Sort user content into categories
-			for(i=0;i<userContent.length;i++)
-			{
-
-				//record id for edit/delete 
-				var tmpContent =jQuery.extend(true,{}, userContent[i]);
-				tmpContent["id"] = i;
-
-
-				//function to recursively remove data with insufficient permissions
-				var trim = function(curNode, userPermis){
-
-
-					//get an object which is contains the intersecting tags between  
-					//the user permissions and current data tags
-					var permisIntersect = $(userPermis).not($(userPermis).not(curNode.tags));
-
-					//no shared permissions, return null
-					if(permisIntersect.length < 1)
-					{
-						return null;
-					}					
-
-					//leaf node types should return themself on match, journal entries share permissions with their parent 
-					if(curNode.type == "text" || curNode.type == "image" || curNode.type == "map" || curNode.type == "journal")
-					{
-						return curNode;
-					}
-
-					//collections must be recursively pruned
-
-					var newContent = [];
-					$.each(curNode.content,function(i,val){
-
-						var tmp = trim(val, userPermis);
-						//if not null add orginal id (for editing later) and add to content
-						if(tmp){
-							tmp["id"]=i;
-							newContent.push(tmp);
-						}
-					});
-
-					curNode.content = newContent;
-					return curNode;
-
-
-				};
-
-				tmpContent = trim(tmpContent,userPermissions);
-
-				//only add nodes which user has a matching permission
-				if(tmpContent)
-				{
-					
-					catNodes[userContent[i].category]["content"].push(tmpContent);
-				}
-			}
-
-			
+			//Sort user content into categories		
+			$.each(viewContent, function(i,val){catNodes[val.category]["content"].push(val);})
 
 			var viewRoot = buildRootNode();
 
