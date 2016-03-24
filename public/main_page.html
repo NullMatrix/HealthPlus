@@ -415,8 +415,10 @@
 		*	   Event Handlers   *
 		*************************/
 
-		//button handler for nav bar buttons
 
+
+
+		//button handler for nav bar buttons
 		function sideBarChange(buttonElement){
 			//alert(buttonElement.id);
 			var buttonClickedId = buttonElement.id;
@@ -439,8 +441,8 @@
 				document.getElementById("sidebar").innerHTML= buildMainSidebar("people");
 			}
 			else if( buttonClickedId === 'btnData' ){
-
-				document.getElementById("dataview").innerHTML= buildMainDataview(contentNav);
+				document.getElementById("sidebar").innerHTML= buildMainSidebar("data");
+				
 			}
 			else{
 				/*
@@ -450,7 +452,10 @@
 				//contentView = buildViewTree(3);
 				//contentNav = contentView;
 				//document.getElementById("dataview").innerHTML = buildMainDataview(contentNav);
-				console.log(getVisitContent(0,3));
+				//console.log(getVisitContent(0,3));
+				//document.getElementById("dataview").innerHTML= buildMainDataview(contentNav);
+				
+
 			}
 
 		}
@@ -616,9 +621,41 @@
 
 		}
 
+		function sidebarSearch(){
+
+			console.log(getSearchResults(document.getElementById("search").value));
+		}
+
+		function sidebarPersonSearch()
+		{
+			userProfile.friends = getSearchPeopleResults(document.getElementById("search").value); 
+			document.getElementById("sidebar").innerHTML =buildMainSidebar("people");
+		}
+
 		/************************
 		*	Query Functions   *
 		*************************/
+		function getSearchPeopleResults(queryString,last) {
+			//async query the server for a profile and return JSON obj
+
+		    return $.ajax({
+		        type: "GET",
+		        url: "/searchPeople?userID="+ROOTUSER+"&queryString="+queryString,
+		        async: false
+
+		    }).responseJSON;
+		}
+
+		function getSearchResults(queryString,last) {
+			//async query the server for a profile and return JSON obj
+
+		    return $.ajax({
+		        type: "GET",
+		        url: "/searchData?userID="+ROOTUSER+"&queryString="+queryString,
+		        async: false
+
+		    }).responseJSON;
+		}
 
 		function getUserset(ids,last) {
 			//async query the server for a profile and return JSON obj
@@ -719,16 +756,13 @@
 			}
 			else if(tab == "data")
 			{
-				sidebar = buildSideBarMessages();
+				sidebar = buildSideBarMessages() + buildSidebarData();
 
 			}
 
 			return sidebar;
 
 		}
-
-
-
 
 
 		function buildSideBarMessages()
@@ -755,6 +789,8 @@
 		{
 
 				var side = "";
+				side += "<form>Search:&nbsp;&nbsp;<input id='search' type='text'name='search'>&nbsp;&nbsp;<input type='button'value='search' onclick='sidebarPersonSearch()'></form>";
+
 				side += "<ul class='list-group' style='width:350px;'>";
 
 				var friend = {};
@@ -782,21 +818,79 @@
 		function buildSidebarCircles()
 		{
 
-				var side = "";
+			var side = "";
 
-				side += "<ul class='list-group' style='width:350px;'>";
+			side += "<ul class='list-group' style='width:350px;'>";
 
-				$.each(Object.keys(userProfile.circles), function(i,val){
-					side += "<li href='#' class='list-group-item' style='height:75px'>";
-					side += "<img src='/asset/"+userProfile.circles[val].image+"' height=20 width=20></img>";
-					side += val;
-					side += "</li>";
-				});
+			$.each(Object.keys(userProfile.circles), function(i,val){
+				side += "<li href='#' class='list-group-item' style='height:75px'>";
+				side += "<img src='/asset/"+userProfile.circles[val].image+"' height=20 width=20></img>";
+				side += val;
+				side += "</li>";
+			});
 
-				side += "</ul>";
+			side += "</ul>";
 
-				return side;
+			return side;
 		}
+
+		function buildSidebarData()
+		{
+
+			var side = "";
+
+			//@TODO Searchbar field
+			//@TODO Create Search button handler
+
+			side += "<form>Search:&nbsp;&nbsp;<input id='search' type='text'name='search'>&nbsp;&nbsp;<input type='button'value='search' onclick='sidebarSearch()'></form>";
+
+			//@TODO Search Categories
+			//Example code: http://bootsnipp.com/snippets/featured/accordion-menu
+
+			side += "<div id='SRAccordian' class='panel-group'>";
+
+			side += "<div class='panel panel-default'>";
+			side += "<div class='panel-heading'>";
+			side += "<a href='#circleSR' data-parent='#SRAccordian' class='btn btn-info' data-toggle='collapse'>Your Circles</a>";
+			side += "</div>";
+			side += "<div id='circleSR' class='panel-collapse collapse'>";
+			side += "<div class='panel-body'>";
+			side += "<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit</p>";
+			side += "</div></div></div>";
+			
+			side += "<div class='panel panel-default'>";
+			side += "<div class='panel-heading'>";
+			side += "<a href='#peopleSR' data-parent='#SRAccordian' class='btn btn-info' data-toggle='collapse'>People You Know</a>";
+			side += "</div>";
+			side += "<div id='peopleSR' class='panel-collapse collapse'>";
+			side += "<div class='panel-body'>";
+			side += "<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit</p>";
+			side += "</div></div></div>";
+
+			side += "<div class='panel panel-default'>";
+			side += "<div class='panel-heading'>";
+			side += "<a href='#foffSR' data-parent='#SRAccordian' class='btn btn-info' data-toggle='collapse'>People You May Know</a>";
+			side += "</div>";
+			side += "<div id='foffSR' class='panel-collapse collapse'>";
+			side += "<div class='panel-body'>";
+			side += "<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit</p>";
+			side += "</div></div></div>";
+
+			side += "</div>";
+
+			return side;
+		}
+
+		/*
+			side += "<a href='#circleSR' class='btn btn-info' data-toggle='collapse'>Your Circles</a>";
+			side += "<div id='circleSR' class='collapse'>Lorem ipsum dolor sit amet, consectetur adipisicing elit</div>";
+
+			side += "<a href='#peopleSR' class='btn btn-info' data-toggle='collapse'>People You Know</a>";
+			side += "<div id='peopleSR' class='collapse'>Lorem ipsum dolor sit amet, consectetur adipisicing elit</div>";
+
+			side += "<a href='#foffSR' class='btn btn-info' data-toggle='collapse'>People You May Know</a>";
+			side += "<div id='foffSR' class='collapse'>Lorem ipsum dolor sit amet, consectetur adipisicing elit</div>";
+		*/
 
 		
 		//builder function for root node view with selection options for each availible category
@@ -1087,9 +1181,138 @@
 		}
 
 		//@TODO builder for comfirmation popup when making edits in data view
-		function buildComfPage()
+		function buildComfPage(cur)
 		{
+			var page = "";
 
+			page += "<form class='leaf_overlay'>";
+
+			//title row			
+			page += "<div style='text-align:center;' class='form-group row'>";
+			page += 	"<div class='col-md-12'>";
+			page += 		"<h2 style='text-align:center;'><br>Title: "+cur.title+"<br></h2>";
+			page += "</div></div>";
+
+			//content display
+			page += "<div style='text-align:center;' class='form-group row'>";
+			page += "<div class='col-md-12'>";
+			page += "<fieldset class='center-block' style='width:80%;' class='form-group'>";
+			
+			if(cur.type == "text")
+			{
+				page += "<label for='contentDisplay'>Content</label>";
+   				page += "<textarea class='form-control' id='contentDisplay' rows='8'></textarea>";
+
+			}
+			else if(cur.type == "image")
+			{
+				page+= "<img src='/asset/"+cur.content+"' height='200' width='200'></img>";
+			}
+			else if(cur.type == "map")
+			{
+				page += "<p>MAP!</p>";
+			}
+
+			page += "</fieldset>";
+			page += "</div></div>";
+
+
+			
+			page += "<div class='form-group row'>";
+
+			//property editor/viewer
+			page += "<div style='text-align:center;' class='col-md-6'>";
+			page += "<fieldset class='form_border'>";
+
+			page += "<legend class='form_border'>";
+			page += "<button class='btn-info' type='button'>Edit</button>";
+			page += "</legend>";
+
+			page += "<label>Created:</label>";
+			page += "<label>"+cur.created+"</label>";
+			page += "<br>";
+
+			page += "<label>Last Edit:</label>";
+			page += "<label>"+cur.last_edit+"</label>";
+			page += "<br>";
+
+			page += "<div style='text-align:center;'>"
+			page += "<label style='vertical-align:top;'>Tags:</label>";
+			page += "<select multiple disabled style='width:30%;'>";
+			for(i=0;i<cur.tags.length;i++)
+			{
+				page += "<option>"+cur.tags[i]+"</option>";
+			}
+    		page += "</select>";
+    		page += "</div>"
+
+			page += "</fieldset>"
+			page += "</div>";//end col
+
+			//membership viewer
+			page += "<div style='text-align:center;' class='col-md-6'>";
+			page += "<fieldset class='form_border'>";
+
+
+			//radio buttons to switch between seeing circle access and user access
+			page += "<legend class='form_border'>";
+			page += "<div class='radio-inline'>"
+    		page += "<label>"
+      		page += "<input type='radio' name='accessList' onclick='accessListViewChange(this)' id='cirAccessRdo' value='circle' checked>"
+      		page += "Circles"
+ 			page += "</label>"
+  			page += "</div>"
+
+  			page += "<div class='radio-inline'>"
+    		page += "<label>"
+      		page += "<input type='radio' name='accessList' onclick='accessListViewChange(this)' id='userAccessRdo' value='user'>"
+      		page += "People"
+    		page += "</label>"
+  			page += "</div>"
+  			page += "</legend>";
+
+
+			page += "<div style='display:inline-block;'>"
+			page += "<label style='vertical-align:top;'>Access:</label>";
+			page += "<ul id='dataACList' style='list-style-type:none; width:100%;'>";
+
+			//generate access list
+			var circles = accessListCircles(cur);
+
+			for(i=0;i<circles.length;i++)
+			{
+				page += "<li>"+circles[i]+"</li>";
+			}
+    		page += "</ul>";
+    		page += "</div>"
+
+			page += "</fieldset>"
+			page += "</div>";//end col
+
+
+			page += "</div>";//end row
+
+			
+			page += "<div style='text-align:center;' class='form-group row'>";
+
+			page += "<div class='col-md-12'>";
+
+			page +=  "<button type='button' style='btn-primary inline' onclick='dataNavControl(this)' value='up' style='height:25%; width:100%;'>";
+			page += "Back"; 
+			page += "</button>";
+			page +=  "<button type='button' style='btn-primary' style='height:25%; width:100%;'>";
+			page += "Commit"; 
+			page += "</button>";
+
+
+			page += "</div>"; //end col
+
+			page += "</div>"; //end row
+
+
+			page += "</form>"; 
+
+			return page;
 		}
 
 	</script>
