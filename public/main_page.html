@@ -71,7 +71,6 @@
 
 		//logged in user profile
 		var userProfile;
-
 		//logged in user's data and metadata
 		var userContent;
 		var contentMetadata;
@@ -94,6 +93,11 @@
 		var viewUser;
 		//user id of user being visited
 		var visitUser;
+
+		//Varible to track the current display state for the sidebar and main display
+		//reference on reloads and changed on transitions.
+		var sideState;
+		var centreState;
 
 		/************************
 		*	     On Load        *
@@ -433,15 +437,16 @@
 
 			//button handlers
 			if( buttonClickedId === 'btnCircles' ){
-				document.getElementById("sidebar").innerHTML= buildMainSidebar("circles");
-				
+				sideState = "circles";
+				document.getElementById("sidebar").innerHTML= buildMainSidebar();
 			}
 			else if( buttonClickedId === 'btnPeople' ){
-				
-				document.getElementById("sidebar").innerHTML= buildMainSidebar("people");
+				sideState = "people";
+				document.getElementById("sidebar").innerHTML= buildMainSidebar();
 			}
 			else if( buttonClickedId === 'btnData' ){
-				document.getElementById("sidebar").innerHTML= buildMainSidebar("data");
+				sideState = "data";
+				document.getElementById("sidebar").innerHTML= buildMainSidebar();
 				
 			}
 			else{
@@ -453,9 +458,7 @@
 				//contentNav = contentView;
 				//document.getElementById("dataview").innerHTML = buildMainDataview(contentNav);
 				//console.log(getVisitContent(0,3));
-				//document.getElementById("dataview").innerHTML= buildMainDataview(contentNav);
-				
-
+				//document.getElementById("dataview").innerHTML= buildMainDataview(contentNav)
 			}
 
 		}
@@ -551,7 +554,7 @@
 
 			//reload view with new/changed data
 			document.getElementById("dataview").innerHTML = buildMainDataview(contentNav);
-			document.getElementById("sidebar").innerHTML = buildMainSidebar("people");
+			//document.getElementById("sidebar").innerHTML = buildMainSidebar("people");
 			return;
 		}
 
@@ -599,38 +602,66 @@
 				contentView = buildViewTree($(buttonelement).parent().attr('value'));
 				contentNav = contentView;
 				document.getElementById("dataview").innerHTML = buildMainDataview(contentNav);
-				document.getElementById("sidebar").innerHTML = buildMainSidebar("people");
+				document.getElementById("sidebar").innerHTML = buildMainSidebar();
 
 			}
 			else if(buttonelement.value === "visit")
 			{
 				console.log("VISIT");
+
+				viewState = "visit"; 
+				viewUser = $(buttonelement).parent().attr('value');
+
+				//@TODO - create function to build visit tree
+				//contentView = buildViewTree($(buttonelement).parent().attr('value'));
+				//contentNav = contentView;
+
+				document.getElementById("dataview").innerHTML = buildMainDataview(contentNav);
+				document.getElementById("sidebar").innerHTML = buildMainSidebar();
 			}
 			else if(buttonelement.value === "edit")
 			{
 				console.log("EDIT");
 			}
-			else if(buttonelement.value === "viewExit")
+			else if(buttonelement.value === "exit")
 			{
 				viewState = "owner"; 
 				contentView = jQuery.extend(true,{}, contentRoot);;
 				contentNav = contentView;
 				document.getElementById("dataview").innerHTML = buildMainDataview(contentNav);
-				document.getElementById("sidebar").innerHTML = buildMainSidebar("people");
+				document.getElementById("sidebar").innerHTML = buildMainSidebar();
 			}
 
 		}
 
-		function sidebarSearch(){
+		function sidebarCircleOptions(buttonelement){
 
-			console.log(getSearchResults(document.getElementById("search").value));
+			//@TODO open edit screen for circle editing
+			//console.log(buttonelement.value);
+			document.getElementById("dataview").innerHTML = buildCircleEdit(buttonelement.value);
+		}
+
+		function sidebarDataSearch(){
+
+			var searchResults = getSearchResults(document.getElementById("search").value);
+			var args = [{},searchResults]
+			sideState = "data"
+			document.getElementById("sidebar").innerHTML = buildMainSidebar(args);
 		}
 
 		function sidebarPersonSearch()
 		{
 			userProfile.friends = getSearchPeopleResults(document.getElementById("search").value); 
-			document.getElementById("sidebar").innerHTML =buildMainSidebar("people");
+			sideState = "people";
+			document.getElementById("sidebar").innerHTML =buildMainSidebar();
 		}
+
+		function swapSelection(src, dest)
+		{
+			console.log(src);
+			console.log(dest);
+
+		} 
 
 		/************************
 		*	Query Functions   *
@@ -742,21 +773,37 @@
 			return buildDataCollection(cur);		
 		}
 
-		function buildMainSidebar(tab)
+
+		//Build Side bar HTML String based on sideState
+		//People, circles, data
+		//Params
+		//args - additional arguments if availible
+			//For Data
+				//args[0] - search result on circle names
+				//args[1] - search result on data
+		function buildMainSidebar(args=[])
 		{
 			var sidebar = ""
 
-			if(tab == "people")
+			if(sideState == "people")
 			{
 				sidebar = buildSideBarMessages() + buildSidebarPeople();
 			}
-			else if(tab == "circles")
+			else if(sideState == "circles")
 			{
 				sidebar = buildSideBarMessages() + buildSidebarCircles();
 			}
-			else if(tab == "data")
+			else if(sideState == "data")
 			{
-				sidebar = buildSideBarMessages() + buildSidebarData();
+				sidebar = buildSideBarMessages() 
+				if(args.length >=2)
+				{
+					sidebar += buildSidebarData(args[0],args[1]);
+				}
+				else
+				{
+					sidebar += buildSidebarData();
+				}
 
 			}
 
@@ -776,8 +823,19 @@
 				var viewUserTemp = getUser(viewUser);
 				side += viewUserTemp.fName + " " + viewUserTemp.lName;
 
-				side += "<button type='button' onclick='sidebarUserOptions(this)' value='viewExit' style='height:95%; width:15%;'>Exit View</button>";
+				side += "<button type='button' onclick='sidebarUserOptions(this)' value='exit' style='height:95%; width:15%;'>Exit View</button>";
 				side += "</p>"
+			}
+			else if(viewState == "visit")
+			{
+				side += "<p>Visiting: ";
+
+				var viewUserTemp = getUser(viewUser);
+				side += viewUserTemp.fName + " " + viewUserTemp.lName;
+
+				side += "<button type='button' onclick='sidebarUserOptions(this)' value='exit' style='height:95%; width:15%;'>Exit Visit</button>";
+				side += "</p>"
+				side += "<br><p>Note: Data currently shown belongs to another user.</p>"
 			}
 
 			return side; 
@@ -796,7 +854,7 @@
 				var friend = {};
 				for(var i=0; i<userProfile.friends.length;i++)
 				{
-
+					//@TODO use the get userset query to streamline this
 					//console.log("Running "+userProfile.friends[i])
 					friend = getUser(userProfile.friends[i]);
 
@@ -825,7 +883,8 @@
 			$.each(Object.keys(userProfile.circles), function(i,val){
 				side += "<li href='#' class='list-group-item' style='height:75px'>";
 				side += "<img src='/asset/"+userProfile.circles[val].image+"' height=20 width=20></img>";
-				side += val;
+				side += val + " ";
+				side += "<button type='button' onclick='sidebarCircleOptions(this)' value='"+val+"' style='height:95%; width:15%; float:right;'>Edit</button>";
 				side += "</li>";
 			});
 
@@ -834,7 +893,10 @@
 			return side;
 		}
 
-		function buildSidebarData()
+		//parmas
+		//circleSearch - results from search on circle names
+		//dataSearch - results from search on data
+		function buildSidebarData(circleSearch = [], dataSearch = [])
 		{
 
 			var side = "";
@@ -842,7 +904,7 @@
 			//@TODO Searchbar field
 			//@TODO Create Search button handler
 
-			side += "<form>Search:&nbsp;&nbsp;<input id='search' type='text'name='search'>&nbsp;&nbsp;<input type='button'value='search' onclick='sidebarSearch()'></form>";
+			side += "<form>Search:&nbsp;&nbsp;<input id='search' type='text'name='search'>&nbsp;&nbsp;<input type='button'value='search' onclick='sidebarDataSearch()'></form>";
 
 			//@TODO Search Categories
 			//Example code: http://bootsnipp.com/snippets/featured/accordion-menu
@@ -864,9 +926,25 @@
 			side += "</div>";
 			side += "<div id='peopleSR' class='panel-collapse collapse'>";
 			side += "<div class='panel-body'>";
-			side += "<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit</p>";
+
+
+			//add data search results to accordian
+			side += "<ul class='list-group' style='width:350px;'>";
+			for(i=0;i<dataSearch.length;i++)
+			{
+				side += "<li href='#' class='list-group-item' style='height:75px'>";
+				side += "<p>";
+				side += "<b>"+dataSearch[i].title+"</b><br>";
+				side += dataSearch[i].content;
+				side += "</p>";
+				side += "</li>";
+			}
+			side += "</ul>"
+
+
 			side += "</div></div></div>";
 
+			/*
 			side += "<div class='panel panel-default'>";
 			side += "<div class='panel-heading'>";
 			side += "<a href='#foffSR' data-parent='#SRAccordian' class='btn btn-info' data-toggle='collapse'>People You May Know</a>";
@@ -875,6 +953,7 @@
 			side += "<div class='panel-body'>";
 			side += "<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit</p>";
 			side += "</div></div></div>";
+			*/
 
 			side += "</div>";
 
@@ -1308,6 +1387,126 @@
 			page += "</div>"; //end col
 
 			page += "</div>"; //end row
+
+
+			page += "</form>"; 
+
+			return page;
+		}
+
+
+		//build the editing screen for a circle
+		//Param circleName is a string of the circle to be editied
+		function buildCircleEdit(circleName)
+		{
+
+			//@TODO: Populate members and tags from acct data (Pull)
+			//@TODO: Functional Transfer buttons
+			//@TODO: New Tag option near tag controls
+			//@TODO: Commit Changes (Push)
+			//@TODO: Repurpose for New Circle screen
+
+
+			var page = "";
+
+			page += "<form class='leaf_overlay'>";
+
+			//Page Header (10% - T: 10%)
+			page += "<div class='row' style='height:10%;width:inherit;text-align:center;'>"
+			page += "<br><h4>Edit Circle:</h4></br>"
+			page += "</div>"
+
+			//Circle name (10% - T: 20%)
+			page += "<div class='row' style='height:10%;width:inherit;'>"
+				page += "<div class='col-md-12'>"
+					page += "<input type='text' class='form-control center-block' id='cirName' value='"+circleName+"' style='height:inherit;width:25%;text-align:center;' disabled>"
+				page += "</div>"
+			page += "</div>"
+
+			//People Header (5% - T: 25%)
+			page += "<div class='row' style='height:5%;width:inherit;text-align:center;'>"
+			page += "<h4>Circle Members:</h4>"
+			page += "</div>"
+
+			//People Selecter (30% - T: 55%)
+			page += "<div class='row' style='height:30%;width:inherit;text-align:center;'>"
+				//Current People
+				page += "<div class='col-md-5'>"
+					page += "<p>Members Currently In Circle</p>"
+					page += "<select class='center-block' name='peopleIn' size='6' style='width:70%;'>";
+					for (var i = 0; i <= 10; i++) { //@TODO popultae with circle members
+						page += "<option>"+i+"</option>"
+					};
+					page += "</select>"
+				page += "</div>"
+				//transfer buttons
+				page += "<div class='col-md-2' style='height:100%;display:flex;align-items:center;'>"
+					page += "<div class='text-center' style='margin:0px auto;'>"
+						page += "<button type='button' style='btn-primary' value='reload' onClick='swapSelection(peopleOut,peopleIn)' style='height:100%; width:100%;'><<</button><br>";
+						page += "<button type='button' style='btn-primary' value='reload' style='height:100%; width:100%;'>>></button>";
+					page += "</div>"
+				page += "</div>"
+				//Other people
+				page += "<div class='col-md-5'>"
+					page += "<p>Members Not In Circle</p>"
+					page += "<select class='center-block' name='peopleOut' size='6' style='width:70%;'>";
+					for (var i = 0; i <= 10; i++) { //@TODO popultae with circle members
+						page += "<option>"+i+"</option>"
+					};
+					page += "</select>"
+				page += "</div>"
+			page += "</div>"
+
+			//Tag Header (5% - T: 60%)
+			page += "<div class='row' style='height:5%;width:inherit;text-align:center;'>"
+			page += "<h4>Circle Tags:</h4>"
+			page += "</div>"
+
+			//Tag Selecter(30% - T: 90%)
+			page += "<div class='row' style='height:30%;width:inherit;text-align:center;'>"
+				//Current Tags
+				page += "<div class='col-md-5'>"
+					page += "<p>Current Tags</p>"
+					page += "<select class='center-block' name='tagIn' size='6' style='width:70%;'>";
+					for (var i = 0; i <= 10; i++) { //@TODO popultae with circle members
+						page += "<option>"+i+"</option>"
+					};
+					page += "</select>"
+				page += "</div>"
+				//transfer buttons
+				page += "<div class='col-md-2' style='height:100%;display:flex;align-items:center;'>"
+					page += "<div class='text-center' style='margin:0px auto;'>"
+						page += "<button type='button' style='btn-primary' value='reload' style='height:100%; width:100%;'><<</button><br>";
+						page += "<button type='button' style='btn-primary' value='reload' style='height:100%; width:100%;'>>></button>";
+					page += "</div>"
+				page += "</div>"
+				//Other tags
+				page += "<div class='col-md-5'>"
+					page += "<p>All Tags</p>"
+					page += "<select class='center-block' name='tagOut' size='6' style='width:70%;'>";
+					for (var i = 0; i <= 10; i++) { //@TODO popultae with circle members
+						page += "<option>"+i+"</option>"
+					};
+					page += "</select>"
+				page += "</div>"
+			page += "</div>"
+			//Footer Comf/Cancel (10% - T: 100%)
+			page += "<div class='row' style='height:10%;width:inherit;text-align:center;'>"
+			page += "<button type='button' style='btn-primary' onclick='dataNavControl(this)' value='reload' style='height:100%; width:100%;'>Return</button>";
+			page += "</div>"
+
+
+			
+			
+
+			//Middle row with person membership
+			page += "<div class='row' style='height:33%;width:inherit'>"
+			page += "</div>"
+
+			//Bottom ro w with circle membership
+			page += "<div class='row' style='height:33%;width:inherit'>"
+			page += "</div>"
+
 
 
 			page += "</form>"; 

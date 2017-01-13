@@ -5,6 +5,12 @@ var fs = require('fs');
 var strDistance = require('jaro-winkler');
 //app.use(express.static(__dirname + '/public'));
 
+//JSON files, loaded at start and periodically written back to file.
+var userData;
+var userMeta;
+var contentData;
+var contentMeta;
+
 
 /************************
 *   Routing Functions   *
@@ -34,9 +40,7 @@ app.get('/asset/:path', function (req, res) {
 app.get('/userset', function (req, res) {
   console.log("Got "+req.method+" userset request for set:" + req.query.users);
   
-
-  var accJSN = JSON.parse(fs.readFileSync(path.join(__dirname,'/public/data/users.json')));
-  accJSN = accJSN.users;
+  var userDataClone = JSON.parse(JSON.stringify(userData));
 
   var users = JSON.parse(req.query.users);
 
@@ -47,9 +51,9 @@ app.get('/userset', function (req, res) {
     //build a simplified user object and add it to the response
     var temp = {};
     temp["id"] = users[i];
-    temp["fName"] = accJSN[users[i]].fName;
-    temp["lName"] = accJSN[users[i]].lName;
-    temp["profilePic"] = accJSN[users[i]].profilePic; 
+    temp["fName"] = userDataClone[users[i]].fName;
+    temp["lName"] = userDataClone[users[i]].lName;
+    temp["profilePic"] = userDataClone[users[i]].profilePic; 
     resJSN.push(temp);
   }
 
@@ -71,26 +75,21 @@ app.get('/data/:asset/:id', function (req, res) {
 
   if(req.params.asset === "user")
   {
-    //load profiles
-    accJSN = JSON.parse(fs.readFileSync(path.join(__dirname,'/public/data/users.json')));
-
     //return profile with id num
-    res.json(accJSN.users[req.params.id]);
+    res.json(userData[req.params.id]);
   }
   else if(req.params.asset === "content")
   { 
-    //load data 
-    accJSN = JSON.parse(fs.readFileSync(path.join(__dirname,'/public/data/content.json')));
 
     if(req.params.id === "meta")
     {
       //return data metadata
-      res.json(accJSN.meta);
+      res.json(contentMeta);
     }
     else
     {
       //return data with id num
-      res.json(accJSN.data[req.params.id]);
+      res.json(contentData[req.params.id]);
     }
     
   }
@@ -117,8 +116,7 @@ app.get('/visitUser', function (req, res) {
   var userPermissions = [];
 
   //toUser circle info pulled from all accounts
-  var userAccts = JSON.parse(fs.readFileSync(path.join(__dirname,'/public/data/users.json')));
-  var circles = userAccts.users[toUser].circles;
+  var circles = JSON.parse(JSON.stringify(userData[toUser].circles));
 
   //generate list of tags from user has access to see on to user
   for(c in circles)
@@ -136,12 +134,8 @@ app.get('/visitUser', function (req, res) {
   }
 
 
-  //pull toUser content
-  var userContent = JSON.parse(fs.readFileSync(path.join(__dirname,'/public/data/content.json')));
-  userContent = userContent.data[toUser];
-
-    
-
+  //clone toUser content 
+  userContent = JSON.parse(JSON.stringify(contentData[toUser]));
 
   var returnContent = [];
 
@@ -177,10 +171,6 @@ app.get('/searchPeople', function (req, res) {
   //request params
   var queryString = req.query.queryString;
   var userID = parseInt(req.query.userID);
-
-  //load user data
-  var userData = JSON.parse(fs.readFileSync(path.join(__dirname,'/public/data/users.json')));
-  userData = userData.users;
 
   var friends = userData[userID].friends;
 
@@ -232,12 +222,9 @@ app.get('/searchData', function (req, res) {
 
   var id = 0; //incrementing id counter 
   var queryString = req.query.queryString;
-  
 
-
-  var userData = JSON.parse(fs.readFileSync(path.join(__dirname,'/public/data/content.json')));
-
-  userData = userData.data[req.query.userID];
+  //data to be searched from specified user (cloned from global)
+  var searchUserData = JSON.parse(JSON.stringify(contentData[req.query.userID]));
   //array to hold data with id for return
   userDatawID = new Array();
 
@@ -246,13 +233,12 @@ app.get('/searchData', function (req, res) {
   var stack = new Array();
 
   //put all top level data into stack
-  for(d in userData)
+  for(d in searchUserData)
   {
-    userData[d]["id"]= id;
+    searchUserData[d]["id"]= id;
     id++;
-    stack.push(userData[d]);
+    stack.push(searchUserData[d]);
   }
-
 
   while(stack.length>0)
   {
@@ -530,6 +516,27 @@ function generateFriendsOfFriendsList(userID, users){
     return data;
   }
 
+
+  //change the value of a given field of the owners content
+  //int id - id of data to change
+  //string field - name of object field to modify
+  //newValue - new content for field
+  //int owner - owner id
+  //int visitor - if content is changed by a non-owner provide visitor id
+  //function editContent(id, field, newValue, owner, visitor = -1)
+  //{
+    //load data set
+      //diff data if visitor exists
+
+    //iterate through data until find id
+
+    //check for existance of field
+      //if does not exist return -1
+
+    //change data
+
+  //}
+
 /************************
 *   Listener Function   *
 *************************/
@@ -541,6 +548,17 @@ var server = app.listen(8081, function () {
   var port = server.address().port
 
   console.log("Health+ listening at http://%s:%s", host, port)
+
+  var load = JSON.parse(fs.readFileSync(path.join(__dirname,'/public/data/users.json')));
+
+  userData = load.users;
+  userMeta = load.meta;
+
+  load = JSON.parse(fs.readFileSync(path.join(__dirname,'/public/data/content.json')));
+  contentData = load.data;
+  contentMeta = load.meta;
+
+  console.log("Data loaded");
 
 })
 
