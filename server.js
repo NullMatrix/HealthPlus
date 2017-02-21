@@ -18,27 +18,27 @@ var contentMeta;
 
 //serve login page
 app.get('/', function (req, res) {
-   console.log("Got a GET request for the homepage");
+   //console.log("Got a GET request for the homepage");
    res.sendFile(path.join(__dirname,'public/login.html'));
 })
 
 //serve main page
 app.get('/main', function (req, res) {
-   console.log("Got a GET request for the main");
+   //console.log("Got a GET request for the main");
    res.sendFile(path.join(__dirname,'public/main_page.html'));
 })
 
 
 //serve test
 app.get('/asset/:path', function (req, res) {
-   console.log("Got a GET request for the asset: " + req.params.path);
-   console.log("Sending file: " + path.join(__dirname,'assets/',req.params.path+'.png'));
+   //console.log("Got a GET request for the asset: " + req.params.path);
+   //console.log("Sending file: " + path.join(__dirname,'assets/',req.params.path+'.png'));
    res.sendFile(path.join(__dirname,'assets/',req.params.path+'.png'));
 })
 
 //Retrieve basic info (name + profile pic id) given a list fo users
 app.get('/userset', function (req, res) {
-  console.log("Got "+req.method+" userset request for set:" + req.query.users);
+  //console.log("Got "+req.method+" userset request for set:" + req.query.users);
   
   var userDataClone = JSON.parse(JSON.stringify(userData));
 
@@ -302,6 +302,55 @@ app.get('/searchData', function (req, res) {
   res.json(results);
 })
 
+//route for adding a new tag to an acct. Can be done without editing acct info
+app.post('/newTag', function (req, res) {
+  console.log("new tag POST with tag:"+req.query.newTag+" to user:"+req.query.userID);
+
+  var load = JSON.parse(fs.readFileSync(path.join(__dirname,'/public/data/users.json')));
+  var tags = load.users[req.query.userID].tags;
+
+  //Ensure not adding duplicate tags
+  for(i=0;i<tags.length;i++)
+  {
+    if(tags[i]===req.query.newTag)
+    {
+      res.send('<p>Transaction failed, tag exists.</p>');
+      return
+    }
+  }
+
+  //commit changes and reload local assets
+
+  load.users[req.query.userID].tags.push(req.query.newTag);
+
+  var writeString = JSON.stringify(load, null, 2);
+
+  fs.writeFile(path.join(__dirname,'/public/data/users.json'), writeString, loadUsers());
+
+  res.send('<p>Transaction complete!</p>');
+})
+
+//function to update a user's circle to a modified state provided
+app.post('/updateCircle', function (req, res) {
+  console.log("POST update circle");
+
+  var load = JSON.parse(fs.readFileSync(path.join(__dirname,'/public/data/users.json')));
+  
+
+  //commit changes and reload local assets
+
+  //@TODO: ensure userID and cirName are in req, define jsonthing to save.  
+  //load.users[req.query.userID].circles[req.query.cirName] = jsonthing;
+
+  var writeString = JSON.stringify(load, null, 2);
+
+  fs.writeFile(path.join(__dirname,'/public/data/users.json'), writeString, loadUsers());
+
+  res.send('<p>Transaction complete!</p>');
+
+
+
+})
 
 /*
 app.get('/search/:querystring', function (req, res) {
@@ -517,25 +566,22 @@ function generateFriendsOfFriendsList(userID, users){
   }
 
 
-  //change the value of a given field of the owners content
-  //int id - id of data to change
-  //string field - name of object field to modify
-  //newValue - new content for field
-  //int owner - owner id
-  //int visitor - if content is changed by a non-owner provide visitor id
-  //function editContent(id, field, newValue, owner, visitor = -1)
-  //{
-    //load data set
-      //diff data if visitor exists
+  //Load local users to speed GET req
+  function loadUsers(){
+    var load = JSON.parse(fs.readFileSync(path.join(__dirname,'/public/data/users.json')));
+    userData = load.users;
+    userMeta = load.meta;
+  }
 
-    //iterate through data until find id
+  //Load local content to speed Get req
+  function loadContent(){
+    var load = JSON.parse(fs.readFileSync(path.join(__dirname,'/public/data/content.json')));
+    contentData = load.data;
+    contentMeta = load.meta;
+  }
 
-    //check for existance of field
-      //if does not exist return -1
 
-    //change data
 
-  //}
 
 /************************
 *   Listener Function   *
@@ -549,14 +595,8 @@ var server = app.listen(8081, function () {
 
   console.log("Health+ listening at http://%s:%s", host, port)
 
-  var load = JSON.parse(fs.readFileSync(path.join(__dirname,'/public/data/users.json')));
-
-  userData = load.users;
-  userMeta = load.meta;
-
-  load = JSON.parse(fs.readFileSync(path.join(__dirname,'/public/data/content.json')));
-  contentData = load.data;
-  contentMeta = load.meta;
+  loadUsers()
+  loadContent()
 
   console.log("Data loaded");
 

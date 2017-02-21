@@ -41,6 +41,11 @@
 		border-bottom:none;
 	}
 
+	/*Ensure Modal isn't disabled due to being in a disabled container when activated*/
+	div.modal-backdrop{
+		z-index:0;
+	}
+
 	/*
 	div.tooltip {
         position: absolute;
@@ -593,9 +598,6 @@
 
 			if(buttonelement.value === "view")
 			{
-				//@TODO - add changes to sidebar (or elsewhere) to make it obvious you are now viewing as user
-				//@TODO - Add an obvious way to view as root again  
-
 				viewState = "view"; 
 				viewUser = $(buttonelement).parent().attr('value');
 
@@ -636,7 +638,8 @@
 
 		function sidebarCircleOptions(buttonelement){
 
-			//@TODO open edit screen for circle editing
+			//@TODO add button for new circle
+			//@TODO repurpose edit screen for new circle
 			//console.log(buttonelement.value);
 			document.getElementById("dataview").innerHTML = buildCircleEdit(buttonelement.value);
 		}
@@ -656,16 +659,53 @@
 			document.getElementById("sidebar").innerHTML =buildMainSidebar();
 		}
 
+
+		//onclick function to move values between selection boxes on circle editing screen
 		function swapSelection(src, dest)
 		{
-			console.log(src);
-			console.log(dest);
+			//if no selection do nothing
+			if(src.value === '')
+				return
 
+			//Create new option and add to dest
+			var option = document.createElement("option");
+
+			option.text = src.options[src.selectedIndex].text;
+			option.value = src.options[src.selectedIndex].value;
+
+			dest.add(option);
+
+			//remove option @ selected index from src
+			src.remove(src.selectedIndex);
+			
 		} 
+
+		//onclick event for new tag within new/edit circle screen
+		function submitNewTag()
+		{
+			//retrieve the tag
+			var tag = document.getElementById('newTagtxt').value
+			
+			//post to server and clear input
+			postNewTag(tag);
+			document.getElementById('newTagtxt').value = '';
+
+			//update local user after post
+			userProfile = getUser(ROOTUSER);
+			console.log(userProfile)
+
+			//add tag to select
+			var option = document.createElement("option");
+			option.text = tag;
+			option.value = tag;
+			document.getElementById("tagOut").add(option);
+
+		}
 
 		/************************
 		*	Query Functions   *
 		*************************/
+
 		function getSearchPeopleResults(queryString,last) {
 			//async query the server for a profile and return JSON obj
 
@@ -742,6 +782,7 @@
 		    }).responseJSON;
 		}
 
+		//retrive info on toUser account bounded by fromUser permissions
 		function getVisitContent(toUser, fromUser, last){
 
 			return $.ajax({
@@ -750,6 +791,27 @@
 		        async: false
 
 		    }).responseJSON;
+		}
+
+		//post function to create new tags
+		function postNewTag(newTag, last)
+		{
+			return $.ajax({
+				type: "POST",
+				url: "/newTag?userID="+ROOTUSER+"&newTag="+newTag,
+				async: false
+			}).responseJSON;
+		}
+
+		//post function to update circle info
+		function postUpdateCircle(newCir, last)
+		{
+			//@TODO: update ajax call to include stringified newCir 
+			return $.ajax({
+				type: "POST",
+				url: "/newTag?userID="+ROOTUSER+"&newTag="+newTag,
+				async: false
+			}).responseJSON;
 		}
 
 		/************************
@@ -855,7 +917,6 @@
 				for(var i=0; i<userProfile.friends.length;i++)
 				{
 					//@TODO use the get userset query to streamline this
-					//console.log("Running "+userProfile.friends[i])
 					friend = getUser(userProfile.friends[i]);
 
 					//console.log(friend)
@@ -877,6 +938,8 @@
 		{
 
 			var side = "";
+
+			side += "<button class='btn btn-info' style='display:block;margin-left:auto;margin-right:auto;margin-bottom:15px' >New Circle</button>";
 
 			side += "<ul class='list-group' style='width:350px;'>";
 
@@ -1399,13 +1462,11 @@
 		//Param circleName is a string of the circle to be editied
 		function buildCircleEdit(circleName)
 		{
-
-			//@TODO: Populate members and tags from acct data (Pull)
-			//@TODO: Functional Transfer buttons
+			
 			//@TODO: New Tag option near tag controls
-			//@TODO: Commit Changes (Push)
+			//@TODO: Commit Changes (Push) and reload local profile
 			//@TODO: Repurpose for New Circle screen
-
+				
 
 			var page = "";
 
@@ -1413,13 +1474,15 @@
 
 			//Page Header (10% - T: 10%)
 			page += "<div class='row' style='height:10%;width:inherit;text-align:center;'>"
-			page += "<br><h4>Edit Circle:</h4></br>"
+			page += "<br><h4>Circle info :)</h4></br>"
 			page += "</div>"
 
 			//Circle name (10% - T: 20%)
 			page += "<div class='row' style='height:10%;width:inherit;'>"
 				page += "<div class='col-md-12'>"
-					page += "<input type='text' class='form-control center-block' id='cirName' value='"+circleName+"' style='height:inherit;width:25%;text-align:center;' disabled>"
+					page += "<input type='text' class='form-control center-block' id='cirName' value='"+circleName+"' style='height:inherit;width:25%;text-align:center;' disabled>";
+					//@TODO Attach label to above input and investigate css
+					//page += "<label for='cirName'>Circle Name</label><br>";
 				page += "</div>"
 			page += "</div>"
 
@@ -1434,25 +1497,27 @@
 				page += "<div class='col-md-5'>"
 					page += "<p>Members Currently In Circle</p>"
 					page += "<select class='center-block' name='peopleIn' size='6' style='width:70%;'>";
-					for (var i = 0; i <= 10; i++) { //@TODO popultae with circle members
-						page += "<option>"+i+"</option>"
-					};
+
+					var incFriendIndex = userProfile.circles[circleName].members;
+					$.each(getUserset(incFriendIndex), function(i,val){page += "<option value='"+incFriendIndex[i]+"'>"+val.fName+" "+val.lName+"</option>"});
+
 					page += "</select>"
 				page += "</div>"
 				//transfer buttons
 				page += "<div class='col-md-2' style='height:100%;display:flex;align-items:center;'>"
 					page += "<div class='text-center' style='margin:0px auto;'>"
 						page += "<button type='button' style='btn-primary' value='reload' onClick='swapSelection(peopleOut,peopleIn)' style='height:100%; width:100%;'><<</button><br>";
-						page += "<button type='button' style='btn-primary' value='reload' style='height:100%; width:100%;'>>></button>";
+						page += "<button type='button' style='btn-primary' value='reload' onClick='swapSelection(peopleIn,peopleOut)'style='height:100%; width:100%;'>>></button>";
 					page += "</div>"
 				page += "</div>"
 				//Other people
 				page += "<div class='col-md-5'>"
 					page += "<p>Members Not In Circle</p>"
 					page += "<select class='center-block' name='peopleOut' size='6' style='width:70%;'>";
-					for (var i = 0; i <= 10; i++) { //@TODO popultae with circle members
-						page += "<option>"+i+"</option>"
-					};
+
+					var otherFriendsIndex = $(userProfile.friends).not(userProfile.circles[circleName].members).get();	
+					$.each(getUserset(otherFriendsIndex), function(i,val){page += "<option value='"+otherFriendsIndex[i]+"'>"+val.fName+" "+val.lName+"</option>"});
+
 					page += "</select>"
 				page += "</div>"
 			page += "</div>"
@@ -1468,26 +1533,49 @@
 				page += "<div class='col-md-5'>"
 					page += "<p>Current Tags</p>"
 					page += "<select class='center-block' name='tagIn' size='6' style='width:70%;'>";
-					for (var i = 0; i <= 10; i++) { //@TODO popultae with circle members
-						page += "<option>"+i+"</option>"
-					};
+					$.each(userProfile.circles[circleName].tags, function(i,val){page += "<option value='"+val+"'>"+val+"</option>"});
 					page += "</select>"
 				page += "</div>"
 				//transfer buttons
 				page += "<div class='col-md-2' style='height:100%;display:flex;align-items:center;'>"
 					page += "<div class='text-center' style='margin:0px auto;'>"
-						page += "<button type='button' style='btn-primary' value='reload' style='height:100%; width:100%;'><<</button><br>";
-						page += "<button type='button' style='btn-primary' value='reload' style='height:100%; width:100%;'>>></button>";
+						page += "<button type='button' style='btn-primary' value='reload' onClick='swapSelection(tagOut,tagIn)' style='height:100%; width:100%;'><<</button><br>";
+						page += "<button type='button' style='btn-primary' value='reload' onClick='swapSelection(tagIn,tagOut)' style='height:100%; width:100%;'>>></button>";
 					page += "</div>"
 				page += "</div>"
 				//Other tags
 				page += "<div class='col-md-5'>"
 					page += "<p>All Tags</p>"
-					page += "<select class='center-block' name='tagOut' size='6' style='width:70%;'>";
-					for (var i = 0; i <= 10; i++) { //@TODO popultae with circle members
-						page += "<option>"+i+"</option>"
-					};
+					page += "<select class='center-block' name='tagOut' id='tagOut' size='6' style='width:70%;'>";
+					$.each($(userProfile.tags).not(userProfile.circles[circleName].tags).get(), function(i,val){page += "<option value='"+val+"'>"+val+"</option>"});
 					page += "</select>"
+
+					//New Tag button + popup
+
+					page += "<button type='button' style='btn-info' data-toggle='modal' data-target='#tagModal'>New Tag</button>";
+					
+					page += "<div id='tagModal' class='modal fade' role='dialog'>";
+						page += "<div class='modal-dialog'>";
+							page += "<div class='modal-content'>";
+								page += "<div class='modal-header'>";
+									page += "<button type='button' class='close' data-dismiss='modal'>&times;</button>";
+									page += "<h4>Create New Tag</h4>";
+								page += "</div>";
+							page += "<div class='modal-body'>";
+								page += "<p>Please enter new tag:</p>";
+								page += "<textarea id='newTagtxt' rows='1' maxlength='20' style='resize:none;'></textarea>";
+							page += "</div>"
+							page += "<div class='modal-footer'>";
+							page += "<button type='button' class='btn btn-success' onclick='submitNewTag()' data-dismiss='modal'>Save</button>";
+								page += "<button type='button' class='btn btn-warning' data-dismiss='modal'>Cancel</button>";
+							page += "</div>"
+
+
+
+							page += "</div>";
+						page += "</div>";
+					page += "</div>";
+
 				page += "</div>"
 			page += "</div>"
 			//Footer Comf/Cancel (10% - T: 100%)

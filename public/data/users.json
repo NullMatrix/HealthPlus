@@ -1,39 +1,91 @@
 {
-    "meta": {
-        "userCount": 4
-    },
-    "users": [
-        {
-            "id": 0,
-            "fName": "Car",
-            "lName": "Los",
-            "profilePic": 0,
-            "friends":[1,2,3],
-            "circles":{
-                "fam":{"tags":["fam","bio"],"members":[1,2,3],"image":"bone"},
-                "emergency":{"tags":["emergency","bio"],"members":[3],"image":"bone"}, 
-                "work peeps":{"tags":["work peeps", "work"],"members":[1,2],"image":"bone"}}
+  "meta": {
+    "userCount": 4
+  },
+  "users": [
+    {
+      "id": 0,
+      "fName": "Car",
+      "lName": "Los",
+      "profilePic": 0,
+      "friends": [
+        1,
+        2,
+        3
+      ],
+      "tags": [
+        "fam",
+        "bio",
+        "emergency",
+        "work peeps",
+        "work",
+        "test",
+        "test2",
+        "test3"
+      ],
+      "circles": {
+        "fam": {
+          "tags": [
+            "fam",
+            "bio"
+          ],
+          "members": [
+            1,
+            2,
+            3
+          ],
+          "image": "bone"
         },
-        {
-            "id": 1,
-            "fName": "San",
-            "lName": "Juan",
-            "profilePic": 1,
-            "friends":[0]
+        "emergency": {
+          "tags": [
+            "emergency",
+            "bio"
+          ],
+          "members": [
+            3
+          ],
+          "image": "bone"
         },
-        {
-            "id": 2,
-            "fName": "John",
-            "lName": "Clease",
-            "profilePic": 1,
-            "friends":[0,1]
-        },
-        {
-            "id": 3,
-            "fName": "Mark",
-            "lName": "Walburg",
-            "profilePic": 1,
-            "friends":[0]
+        "work peeps": {
+          "tags": [
+            "work peeps",
+            "work"
+          ],
+          "members": [
+            1,
+            2
+          ],
+          "image": "bone"
         }
-    ]
+      }
+    },
+    {
+      "id": 1,
+      "fName": "San",
+      "lName": "Juan",
+      "profilePic": 1,
+      "friends": [
+        0
+      ]
+    },
+    {
+      "id": 2,
+      "fName": "John",
+      "lName": "Clease",
+      "profilePic": 1,
+      "friends": [
+        0,
+        1
+      ]
+    },
+    {
+      "id": 3,
+      "fName": "Mark",
+      "lName": "Walburg",
+      "profilePic": 1,
+      "friends": [
+        0
+      ]
+    }
+  ]
 }
