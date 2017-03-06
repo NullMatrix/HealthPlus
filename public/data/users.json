@@ -27,7 +27,8 @@
         "fam": {
           "tags": [
             "fam",
-            "bio"
+            "bio",
+            "emergency"
           ],
           "members": [
             1,
@@ -54,6 +55,26 @@
           "members": [
             1,
             2
+          ],
+          "image": "bone"
+        },
+        "Moose": {
+          "tags": [
+            "fam",
+            "emergency",
+            "test"
+          ],
+          "members": [
+            2
+          ],
+          "image": "bone"
+        },
+        "meowtst": {
+          "tags": [
+            "emergency"
+          ],
+          "members": [
+            3
           ],
           "image": "bone"
         }

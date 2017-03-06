@@ -692,7 +692,6 @@
 
 			//update local user after post
 			userProfile = getUser(ROOTUSER);
-			console.log(userProfile)
 
 			//add tag to select
 			var option = document.createElement("option");
@@ -700,6 +699,42 @@
 			option.value = tag;
 			document.getElementById("tagOut").add(option);
 
+		}
+
+		//Function to collect form data and make post request to update an exisiting circle
+		function submitCircleEdit(){
+			//@TODO: Popup to ask if user is sure
+			
+
+			//read all values from screen
+			var name = document.getElementById("cirName").value;
+			var members = [];
+			var tags = [];
+
+			//extrct values from selects
+			var temp = document.getElementById("peopleIn");
+			for(i=0;i<temp.length;i++)
+				members.push(temp[i].value);
+			temp = document.getElementById("tagIn");
+			for(i=0;i<temp.length;i++)
+				tags.push(temp[i].value);
+
+			//Post info for server
+			postUpdateCircle(name,members,tags);
+
+			//@TODO: wait on return from post to update user.
+
+			//update local user after post
+			userProfile = getUser(ROOTUSER);
+
+			buildMainSidebar();
+			//@TODO: wait for post response and either alert user to retry or ack and close edit window
+		}
+
+		//Function to collect form data and make post request to create a new circle
+		function submitCircleNew(){
+			//@TODO: A copy of the above function calling a dfferent post
+			console.log("Circle Edit");
 		}
 
 		/************************
@@ -731,19 +766,9 @@
 		function getUserset(ids,last) {
 			//async query the server for a profile and return JSON obj
 
-			userQuery = "";
-
-			//build query string from ids provided
-			for(i=0;i<ids.length;i++)
-			{
-				userQuery += ids[i] + ",";
-			}
-			//remove trailing comma
-			userQuery = userQuery.slice(0,-1);
-
 		    return $.ajax({
 		        type: "GET",
-		        url: "/userset?users=["+userQuery+"]",
+		        url: "/userset?users=["+ids.toString()+"]",
 		        async: false
 
 		    }).responseJSON;
@@ -804,12 +829,30 @@
 		}
 
 		//post function to update circle info
-		function postUpdateCircle(newCir, last)
+		function postUpdateCircle(cirName,members,tags,last)
 		{
+
+			//build queryString out of input
+			queryString = "/updateCircle?userID="+ROOTUSER;
+			queryString += "&cirName="+cirName;
+			queryString += "&cirMembers=["+members.toString()+"]";
+
+
+			var tagFmt = "";
+			//build string array with quotes for JSON parse on server
+			for(i=0;i<tags.length;i++)
+			{
+				tagFmt += "\"" +tags[i] + "\",";
+			}
+			//remove trailing comma
+			tagFmt = tagFmt.slice(0,-1);
+
+			queryString += "&cirTags=["+tagFmt+"]";	
+
 			//@TODO: update ajax call to include stringified newCir 
 			return $.ajax({
 				type: "POST",
-				url: "/newTag?userID="+ROOTUSER+"&newTag="+newTag,
+				url: queryString,
 				async: false
 			}).responseJSON;
 		}
@@ -939,7 +982,7 @@
 
 			var side = "";
 
-			side += "<button class='btn btn-info' style='display:block;margin-left:auto;margin-right:auto;margin-bottom:15px' >New Circle</button>";
+			side += "<button class='btn btn-info' onClick='sidebarCircleOptions(this)' value='' style='display:block;margin-left:auto;margin-right:auto;margin-bottom:15px' >New Circle</button>";
 
 			side += "<ul class='list-group' style='width:350px;'>";
 
@@ -1463,10 +1506,16 @@
 		function buildCircleEdit(circleName)
 		{
 			
-			//@TODO: New Tag option near tag controls
 			//@TODO: Commit Changes (Push) and reload local profile
 			//@TODO: Repurpose for New Circle screen
-				
+			
+			var newFlag = false;
+			if(circleName == '')
+			{newFlag = true}
+
+			console.log("name test: " + circleName);
+			console.log(newFlag);
+
 
 			var page = "";
 
@@ -1480,7 +1529,14 @@
 			//Circle name (10% - T: 20%)
 			page += "<div class='row' style='height:10%;width:inherit;'>"
 				page += "<div class='col-md-12'>"
-					page += "<input type='text' class='form-control center-block' id='cirName' value='"+circleName+"' style='height:inherit;width:25%;text-align:center;' disabled>";
+					page += "<input type='text' class='form-control center-block' id='cirName' style='height:inherit;width:25%;text-align:center;' "; 
+					
+					//if new circle enable name field
+					if(newFlag)
+					{page += "value='Name This Circle'>";}
+					else 
+					{page += "value='"+circleName+"' disabled>";}
+					
 					//@TODO Attach label to above input and investigate css
 					//page += "<label for='cirName'>Circle Name</label><br>";
 				page += "</div>"
@@ -1496,9 +1552,13 @@
 				//Current People
 				page += "<div class='col-md-5'>"
 					page += "<p>Members Currently In Circle</p>"
-					page += "<select class='center-block' name='peopleIn' size='6' style='width:70%;'>";
+					page += "<select class='center-block' id='peopleIn' name='peopleIn' size='6' style='width:70%;'>";
 
-					var incFriendIndex = userProfile.circles[circleName].members;
+					//load inc friends or emprty if new circle
+					var incFriendIndex = []
+					if(!newFlag)
+					{incFriendIndex = userProfile.circles[circleName].members;}	
+
 					$.each(getUserset(incFriendIndex), function(i,val){page += "<option value='"+incFriendIndex[i]+"'>"+val.fName+" "+val.lName+"</option>"});
 
 					page += "</select>"
@@ -1515,7 +1575,15 @@
 					page += "<p>Members Not In Circle</p>"
 					page += "<select class='center-block' name='peopleOut' size='6' style='width:70%;'>";
 
-					var otherFriendsIndex = $(userProfile.friends).not(userProfile.circles[circleName].members).get();	
+
+					//Calculate the exluded friends or all friends if new
+					
+					if(newFlag)
+					{var otherFriendsIndex = userProfile.friends;}
+					else
+					{
+						var otherFriendsIndex = $(userProfile.friends).not(userProfile.circles[circleName].members).get();}
+
 					$.each(getUserset(otherFriendsIndex), function(i,val){page += "<option value='"+otherFriendsIndex[i]+"'>"+val.fName+" "+val.lName+"</option>"});
 
 					page += "</select>"
@@ -1532,8 +1600,12 @@
 				//Current Tags
 				page += "<div class='col-md-5'>"
 					page += "<p>Current Tags</p>"
-					page += "<select class='center-block' name='tagIn' size='6' style='width:70%;'>";
-					$.each(userProfile.circles[circleName].tags, function(i,val){page += "<option value='"+val+"'>"+val+"</option>"});
+					page += "<select class='center-block' id='tagIn' name='tagIn' size='6' style='width:70%;'>";
+					
+					//only add options if edit mode
+					if(!newFlag)
+					{$.each(userProfile.circles[circleName].tags, function(i,val){page += "<option value='"+val+"'>"+val+"</option>"});}
+
 					page += "</select>"
 				page += "</div>"
 				//transfer buttons
@@ -1547,7 +1619,12 @@
 				page += "<div class='col-md-5'>"
 					page += "<p>All Tags</p>"
 					page += "<select class='center-block' name='tagOut' id='tagOut' size='6' style='width:70%;'>";
-					$.each($(userProfile.tags).not(userProfile.circles[circleName].tags).get(), function(i,val){page += "<option value='"+val+"'>"+val+"</option>"});
+					
+					if(newFlag)
+					{$.each(userProfile.tags, function(i,val){page += "<option value='"+val+"'>"+val+"</option>"});}
+					else
+					{$.each($(userProfile.tags).not(userProfile.circles[circleName].tags).get(), function(i,val){page += "<option value='"+val+"'>"+val+"</option>"});}
+
 					page += "</select>"
 
 					//New Tag button + popup
@@ -1581,6 +1658,7 @@
 			//Footer Comf/Cancel (10% - T: 100%)
 			page += "<div class='row' style='height:10%;width:inherit;text-align:center;'>"
 			page += "<button type='button' style='btn-primary' onclick='dataNavControl(this)' value='reload' style='height:100%; width:100%;'>Return</button>";
+			page += "<button type='button' style='btn-primary' onclick='submitCircleEdit()' style='height:100%; width:100%;'>Save Changes</button>";
 			page += "</div>"
 
 

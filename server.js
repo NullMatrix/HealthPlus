@@ -295,7 +295,7 @@ app.get('/searchData', function (req, res) {
   {
     results[j] = userDatawID[topScore[j].id];
   } 
-  console.log(topScore);
+  //console.log(topScore);
 
   
   res.setHeader('Content-Type', 'application/json');
@@ -336,21 +336,33 @@ app.post('/updateCircle', function (req, res) {
 
   var load = JSON.parse(fs.readFileSync(path.join(__dirname,'/public/data/users.json')));
   
+  var name = req.query.cirName;
+  var members = JSON.parse(req.query.cirMembers);
+  var tags = JSON.parse(req.query.cirTags);
+
+  var oldCir = load.users[req.query.userID].circles[name]
+
+  //@TODO: Allow user to select image
+  //Assign default image to new circles
+  var image = "bone";
+  if(oldCir !== undefined){image = oldCir.image;}
+
+  //@TODO: Allow user to select image for new circles
+  var newCir = {"tags":tags,"members":members,"image": image};
+
 
   //commit changes and reload local assets
+  load.users[req.query.userID].circles[name] = newCir;
 
-  //@TODO: ensure userID and cirName are in req, define jsonthing to save.  
-  //load.users[req.query.userID].circles[req.query.cirName] = jsonthing;
-
+  
   var writeString = JSON.stringify(load, null, 2);
 
   fs.writeFile(path.join(__dirname,'/public/data/users.json'), writeString, loadUsers());
-
+  
   res.send('<p>Transaction complete!</p>');
-
-
-
+  
 })
+
 
 /*
 app.get('/search/:querystring', function (req, res) {
