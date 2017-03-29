@@ -353,11 +353,11 @@ app.post('/updateCircle', function (req, res) {
 
   //commit changes and reload local assets
   load.users[req.query.userID].circles[name] = newCir;
-
+  userData = load.users;
   
   var writeString = JSON.stringify(load, null, 2);
 
-  fs.writeFile(path.join(__dirname,'/public/data/users.json'), writeString, loadUsers());
+  fs.writeFile(path.join(__dirname,'/public/data/users.json'), writeString);
   
   res.send('<p>Transaction complete!</p>');
   

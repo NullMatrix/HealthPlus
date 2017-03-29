@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/jstree.min.js"></script>
 
 <style type="text/css">
 	/*Move body below nav bar*/
@@ -453,6 +454,24 @@
 				sideState = "data";
 				document.getElementById("sidebar").innerHTML= buildMainSidebar();
 				
+				//JSTREE STUFF
+				//This jquery call applies functionality over flat ul/li
+				//sturcture. 
+
+				//@TODO: Proceedurally generate the list this applies to in sidebar builder func
+				//@TODO: Better format jstree here
+				$(document).ready(function(){
+					$('#jstree').jstree({
+						"plugins": ["checkbox"]
+					});
+				});
+
+				//END JSTREE STUFF
+			}
+			else if( buttonClickedId === 'btnSearch' ){
+				sideState = "search";
+				document.getElementById("sidebar").innerHTML= buildMainSidebar();
+				
 			}
 			else{
 				/*
@@ -702,12 +721,20 @@
 		}
 
 		//Function to collect form data and make post request to update an exisiting circle
-		function submitCircleEdit(){
+		function submitCircleEdit(create=false){
 			//@TODO: Popup to ask if user is sure
 			
 
 			//read all values from screen
 			var name = document.getElementById("cirName").value;
+
+			//If duplicate name, warn user and cancel
+			if(name in userProfile.circles && create == true)
+			{
+				window.alert("Cannot create a new Circle with that name.");
+				return;
+			}		
+
 			var members = [];
 			var tags = [];
 
@@ -720,22 +747,18 @@
 				tags.push(temp[i].value);
 
 			//Post info for server
-			postUpdateCircle(name,members,tags);
-
+			var x = postUpdateCircle(name,members,tags);
+			console.log(x);
 			//@TODO: wait on return from post to update user.
 
 			//update local user after post
 			userProfile = getUser(ROOTUSER);
 
 			buildMainSidebar();
+			dataNavControl("reload")
 			//@TODO: wait for post response and either alert user to retry or ack and close edit window
 		}
 
-		//Function to collect form data and make post request to create a new circle
-		function submitCircleNew(){
-			//@TODO: A copy of the above function calling a dfferent post
-			console.log("Circle Edit");
-		}
 
 		/************************
 		*	Query Functions   *
@@ -900,14 +923,19 @@
 			}
 			else if(sideState == "data")
 			{
+				sidebar = buildSideBarMessages() + buildSidebarData();
+
+			}
+			else if(sideState == "search")
+			{
 				sidebar = buildSideBarMessages() 
 				if(args.length >=2)
 				{
-					sidebar += buildSidebarData(args[0],args[1]);
+					sidebar += buildSidebarSearch(args[0],args[1]);
 				}
 				else
 				{
-					sidebar += buildSidebarData();
+					sidebar += buildSidebarSearch();
 				}
 
 			}
@@ -999,10 +1027,31 @@
 			return side;
 		}
 
+		//Build sidebar data tree using treejs
+		function buildSidebarData()
+		{	
+			var side = "";
+			side += "<div id='jstree'>";
+			side += "<ul>";
+			side += "<li>Root node 1";
+			side += "<ul>";
+			side += "<li id='child_node_1'>Child node 1</li>";
+			side += "<li>Child node 2</li>";
+			side += "</ul>";
+			side += "</li>";
+			side += "<li>Root node 2</li>";
+			side += "</ul>";
+			side += "</div>";
+			side += "<button>demo button</button>";
+
+			return side;
+    
+		}
+
 		//parmas
 		//circleSearch - results from search on circle names
 		//dataSearch - results from search on data
-		function buildSidebarData(circleSearch = [], dataSearch = [])
+		function buildSidebarSearch(circleSearch = [], dataSearch = [])
 		{
 
 			var side = "";
@@ -1529,7 +1578,7 @@
 			//Circle name (10% - T: 20%)
 			page += "<div class='row' style='height:10%;width:inherit;'>"
 				page += "<div class='col-md-12'>"
-					page += "<input type='text' class='form-control center-block' id='cirName' style='height:inherit;width:25%;text-align:center;' "; 
+					page += "<input type='text' class='form-control center-block' onfocus='this.select();' onmouseup='return false;' id='cirName' style='height:inherit;width:25%;text-align:center;' "; 
 					
 					//if new circle enable name field
 					if(newFlag)
@@ -1658,7 +1707,9 @@
 			//Footer Comf/Cancel (10% - T: 100%)
 			page += "<div class='row' style='height:10%;width:inherit;text-align:center;'>"
 			page += "<button type='button' style='btn-primary' onclick='dataNavControl(this)' value='reload' style='height:100%; width:100%;'>Return</button>";
-			page += "<button type='button' style='btn-primary' onclick='submitCircleEdit()' style='height:100%; width:100%;'>Save Changes</button>";
+			page += "<button type='button' style='btn-primary' onclick='submitCircleEdit(";
+			if(newFlag) {page += "true"};
+			page+= ")' style='height:100%; width:100%;'>Save Changes</button>";
 			page += "</div>"
 
 
@@ -1687,40 +1738,50 @@
 	<div class="container">
 		
 		<nav id="myNavbar" class="navbar navbar-default navbar-inverse navbar-fixed-top" role="navigation">
-				<div class="container">
-					<div class="navbar-header">
-						<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbarCollapse">
-							<span class="sr-only">Toggle navigation</span>
-							<span class="icon-bar"></span>
-							<span class="icon-bar"></span>
-							<span class="icon-bar"></span>
-						</button>
-				<a class="navbar-brand" href="#">Health+</a>
+			<div class="container">
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbarCollapse">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a class="navbar-brand" href="#">Health+</a>
 				</div>
 				<div class="collapse navbar-collapse" id="navbarCollapse">
-				<ul class="nav navbar-nav">
-					<li id="btnCircles" onclick="sideBarChange(this)">
-						<a target="_blank">
-							<span class="glyphicon glyphicon-plus-sign"></span>
-							Your Circles
-						</a>
-					</li>
-					<li id="btnPeople" onclick="sideBarChange(this)"><a target="_blank">
-							<span class="glyphicon glyphicon-user"></span>
-							Your People 
-							<span class="badge">25</span>
-						</a>
-					</li>
-					<li id="btnData" onclick="sideBarChange(this)"><a target="_blank">
-						<span class="glyphicon glyphicon-folder-close"></span>
-						Your Data
-						</a>
-					</li>
-					<li id="btnAccount" onclick="sideBarChange(this)"><a target="_blank"><span class="glyphicon glyphicon-list"></span>Your Account</a></li>
-							</ul>
-						</div>
-					</div>
-				</nav>
+					<ul class="nav navbar-nav">
+						<li id="btnCircles" onclick="sideBarChange(this)">
+							<a target="_blank">
+								<span class="glyphicon glyphicon-plus-sign"></span>
+								Your Circles
+							</a>
+						</li>
+						<li id="btnPeople" onclick="sideBarChange(this)"><a target="_blank">
+								<span class="glyphicon glyphicon-user"></span>
+								Your People 
+								<span class="badge">25</span>
+							</a>
+						</li>
+						<li id="btnData" onclick="sideBarChange(this)"><a target="_blank">
+							<span class="glyphicon glyphicon-folder-close"></span>
+							Your Data
+							</a>
+						</li>
+						<li id="btnSearch" onclick="sideBarChange(this)"><a target="_blank">
+							<span class="glyphicon glyphicon-search"></span>
+							Search
+							</a>
+						</li>
+						<li id="btnAccount" onclick="sideBarChange(this)">
+							<a target="_blank">
+								<span class="glyphicon glyphicon-list"></span>
+								Your Account
+							</a>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</nav>
 
 
 		<div id="main" class="row">

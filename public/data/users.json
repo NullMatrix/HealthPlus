@@ -25,16 +25,8 @@
       ],
       "circles": {
         "fam": {
-          "tags": [
-            "fam",
-            "bio",
-            "emergency"
-          ],
-          "members": [
-            1,
-            2,
-            3
-          ],
+          "tags": [],
+          "members": [],
           "image": "bone"
         },
         "emergency": {
@@ -76,6 +68,34 @@
           "members": [
             3
           ],
+          "image": "bone"
+        },
+        "test2": {
+          "tags": [
+            "emergency"
+          ],
+          "members": [
+            2
+          ],
+          "image": "bone"
+        },
+        "test3": {
+          "tags": [
+            "bio"
+          ],
+          "members": [
+            2
+          ],
+          "image": "bone"
+        },
+        "test4": {
+          "tags": [],
+          "members": [],
+          "image": "bone"
+        },
+        "test5": {
+          "tags": [],
+          "members": [],
           "image": "bone"
         }
       }
